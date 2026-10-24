@@ -1,14 +1,13 @@
-Pastel AI - How to Run:
+﻿Pastel AI - Fast Launch Guide
 
-1. One-Click Launch (Desktop App):
-   Double-click run.bat or run:
+1. Single-Command Install & Run (Terminal):
+   pip install -r requirements.txt && python desktop_app.py
+
+2. One-Click Automated Launcher:
    run.bat
 
-2. Run Pre-built Executable directly:
+3. Run Standalone Executable Directly (No Python needed):
    dist\PastelAI\PastelAI.exe
 
-3. Rebuild Executable:
-   build.bat
-
-4. Development Mode (Backend only):
-   .\venv\Scripts\uvicorn.exe main:app --reload
+4. Move to Another Laptop (One-Line Setup in PowerShell):
+   winget install Ollama.Ollama -e --accept-source-agreements --accept-package-agreements && ollama run qwen2.5:3b && .\dist\PastelAI\PastelAI.exe
