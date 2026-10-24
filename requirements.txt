@@ -1,0 +1,9 @@
+langchain
+python-dotenv
+langchain-google-genai
+fastapi
+uvicorn[standard]
+langchain-ollama
+pywebview
+pillow
+pyinstaller

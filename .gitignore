@@ -1,0 +1,31 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+# C extensions
+*.so
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+.installed.cfg
+*.egg
+# PyInstaller
+*.manifest
+*.spec.bak
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+venv*/
+.deps_installed
+# Environment Variables & Secrets
+.env
+.env.*
+!.env.example
+# Logs and databases
+*.log
+pastel_ai.log
+# Operating System files
+Thumbs.db

@@ -1,0 +1,14 @@
+Pastel AI - How to Run:
+
+1. One-Click Launch (Desktop App):
+   Double-click run.bat or run:
+   run.bat
+
+2. Run Pre-built Executable directly:
+   dist\PastelAI\PastelAI.exe
+
+3. Rebuild Executable:
+   build.bat
+
+4. Development Mode (Backend only):
+   .\venv\Scripts\uvicorn.exe main:app --reload
