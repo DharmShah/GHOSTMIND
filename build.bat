@@ -1,8 +1,8 @@
-@echo off
+﻿@echo off
 setlocal enabledelayedexpansion
 
 echo =====================================================================
-echo                Pastel AI - Windows Build Script
+echo                GHOSTMIND - Windows Build Script
 echo =====================================================================
 echo.
 
@@ -42,7 +42,7 @@ if %ERRORLEVEL% neq 0 (
 echo.
 echo [3/5] Checking application icon assets...
 if not exist "app_icon.ico" (
-    echo Generating application icon...
+    echo Generating application icon from app_icon.png...
     "!PYTHON_EXE!" generate_icon.py
 ) else (
     echo Application icon found.
@@ -51,12 +51,12 @@ if not exist "app_icon.ico" (
 :: 4. Clean previous build artifacts (dist and build)
 echo.
 echo [4/5] Preparing build directories...
-if exist "build\PastelAI" rmdir /s /q "build\PastelAI" >nul 2>nul
+if exist "build\GHOSTMIND" rmdir /s /q "build\GHOSTMIND" >nul 2>nul
 
-:: 5. Run PyInstaller using PastelAI.spec
+:: 5. Run PyInstaller using GhostMind.spec
 echo.
 echo [5/5] Compiling standalone executable with PyInstaller...
-"!PYTHON_EXE!" -m PyInstaller PastelAI.spec --noconfirm
+"!PYTHON_EXE!" -m PyInstaller GhostMind.spec --noconfirm
 if %ERRORLEVEL% neq 0 (
     echo ERROR: PyInstaller build failed.
     exit /b %ERRORLEVEL%
@@ -68,10 +68,10 @@ echo                      BUILD SUCCESSFUL!
 echo =====================================================================
 echo.
 echo Executable location:
-echo   %~dp0dist\PastelAI\PastelAI.exe
+echo   %~dp0dist\GHOSTMIND\GHOSTMIND.exe
 echo.
-echo You can run the application by double-clicking PastelAI.exe
+echo You can run the application by double-clicking GHOSTMIND.exe
 echo or by running:
-echo   start "" "%~dp0dist\PastelAI\PastelAI.exe"
+echo   start "" "%~dp0dist\GHOSTMIND\GHOSTMIND.exe"
 echo.
 pause

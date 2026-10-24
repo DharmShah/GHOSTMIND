@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 import time
 import socket
@@ -13,7 +13,7 @@ multiprocessing.freeze_support()
 
 # Define log file location
 EXE_DIR = os.path.dirname(os.path.abspath(sys.argv[0]))
-LOG_FILE = os.path.join(EXE_DIR, "pastel_ai.log")
+LOG_FILE = os.path.join(EXE_DIR, "ghostmind.log")
 
 class LoggerWriter:
     def __init__(self, filepath):
@@ -129,7 +129,7 @@ def wait_for_server(url, max_seconds=10.0):
 
 def main():
     log("=" * 60)
-    log("      Pastel AI Desktop Chatbot (Qwen 2.5 3B)")
+    log("      GHOSTMIND Desktop Chatbot (Qwen 2.5 3B)")
     log("=" * 60)
 
     # 1. Check and start local Ollama service safely
@@ -186,7 +186,7 @@ def main():
         try:
             log("Creating pywebview window...")
             window = webview.create_window(
-                title="Pastel AI - Local Chatbot",
+                title="GHOSTMIND - Local Chatbot",
                 url=app_url,
                 width=1040,
                 height=880,
@@ -216,7 +216,7 @@ def main():
     # Fallback: Default Browser
     log(f"      Opening in default browser at {app_url}...")
     webbrowser.open(app_url)
-    log("\nPastel AI is running. Press Ctrl+C in this terminal to shut down.")
+    log("\nGHOSTMIND is running. Press Ctrl+C in this terminal to shut down.")
     try:
         while True:
             time.sleep(1)
@@ -228,3 +228,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

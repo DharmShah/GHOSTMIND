@@ -1,4 +1,4 @@
-# -*- mode: python ; coding: utf-8 -*-
+﻿# -*- mode: python ; coding: utf-8 -*-
 import os
 from PyInstaller.utils.hooks import collect_all
 
@@ -67,7 +67,7 @@ exe = EXE(
     a.scripts,
     [],
     exclude_binaries=True,
-    name='PastelAI',
+    name='GHOSTMIND',
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,
@@ -88,5 +88,6 @@ coll = COLLECT(
     strip=False,
     upx=False,
     upx_exclude=[],
-    name='PastelAI',
+    name='GHOSTMIND',
 )
+

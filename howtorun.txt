@@ -1,13 +1,16 @@
-﻿Pastel AI - Fast Launch Guide
+﻿GHOSTMIND - Fast Launch Guide
 
-1. Single-Command Install & Run (Terminal):
-   pip install -r requirements.txt && python desktop_app.py
+1. Desktop Shortcut (Already Created!):
+   Double-click the GHOSTMIND shortcut on your Windows Desktop.
 
 2. One-Click Automated Launcher:
    run.bat
 
-3. Run Standalone Executable Directly (No Python needed):
-   dist\PastelAI\PastelAI.exe
+3. Re-create Desktop Shortcut:
+   create_shortcut.bat
 
-4. Move to Another Laptop (One-Line Setup in PowerShell):
-   winget install Ollama.Ollama -e --accept-source-agreements --accept-package-agreements && ollama run qwen2.5:3b && .\dist\PastelAI\PastelAI.exe
+4. Run Standalone Executable Directly:
+   dist\GHOSTMIND\GHOSTMIND.exe
+
+5. Move to Another Laptop (One-Line Setup in PowerShell):
+   winget install Ollama.Ollama -e --accept-source-agreements --accept-package-agreements && ollama run qwen2.5:3b && .\dist\GHOSTMIND\GHOSTMIND.exe

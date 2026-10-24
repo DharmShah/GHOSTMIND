@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo =====================================================================
-echo                   Pastel AI - 1-Click Launcher
+echo                   GHOSTMIND - 1-Click Launcher
 echo =====================================================================
 echo.
 
@@ -21,9 +21,9 @@ if %ERRORLEVEL% equ 0 (
 )
 
 :: 2. Check if prebuilt executable exists
-if exist "dist\PastelAI\PastelAI.exe" (
-    echo [*] Launching Pastel AI Desktop Application...
-    start "" "dist\PastelAI\PastelAI.exe"
+if exist "dist\GHOSTMIND\GHOSTMIND.exe" (
+    echo [*] Launching GHOSTMIND Desktop Application...
+    start "" "dist\GHOSTMIND\GHOSTMIND.exe"
     exit /b 0
 )
 
@@ -67,6 +67,6 @@ if not exist "app_icon.ico" (
 )
 
 :: 6. Launch desktop application
-echo [*] Launching Pastel AI...
+echo [*] Launching GHOSTMIND...
 start "" "!PYTHON_EXE!" desktop_app.py
 exit /b 0

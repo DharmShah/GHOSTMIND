@@ -1,4 +1,4 @@
-import os
+﻿import os
 import sys
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, JSONResponse
@@ -9,7 +9,7 @@ from langchain.agents import create_agent
 
 import ollama_service
 
-app = FastAPI(title="Pastel AI Local Chatbot")
+app = FastAPI(title="GHOSTMIND Local Chatbot")
 
 # Enable CORS for local desktop webview and browser access
 app.add_middleware(
@@ -21,12 +21,29 @@ app.add_middleware(
 )
 
 def get_resource_path(relative_path: str) -> str:
-    """Get absolute path to resource, compatible with PyInstaller bundle."""
+    """Robust multi-tier resource path finder for frozen and source execution."""
+    # 1. Check folder containing the executable if frozen
     if getattr(sys, "frozen", False):
-        base_path = getattr(sys, "_MEIPASS", os.path.dirname(os.path.abspath(__file__)))
-    else:
-        base_path = os.path.dirname(os.path.abspath(__file__))
-    return os.path.join(base_path, relative_path)
+        exe_dir = os.path.dirname(os.path.abspath(sys.argv[0]))
+        p = os.path.join(exe_dir, relative_path)
+        if os.path.exists(p):
+            return p
+        # 2. Check PyInstaller _MEIPASS directory (_internal)
+        meipass = getattr(sys, "_MEIPASS", None)
+        if meipass:
+            p = os.path.join(meipass, relative_path)
+            if os.path.exists(p):
+                return p
+
+    # 3. Check directory of this python file
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    p = os.path.join(script_dir, relative_path)
+    if os.path.exists(p):
+        return p
+
+    # 4. Fallback to current working directory
+    return os.path.abspath(relative_path)
+
 
 # Lazy-loaded LLM and agent
 _llm = None
@@ -47,13 +64,44 @@ class ChatRequest(BaseModel):
     message: str
 
 
+def make_no_cache_response(filepath: str, media_type: str = None) -> FileResponse:
+    resp = FileResponse(filepath, media_type=media_type)
+    resp.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+    resp.headers["Pragma"] = "no-cache"
+    resp.headers["Expires"] = "0"
+    return resp
+
+
 @app.get("/")
 def home():
     html_path = get_resource_path("index.html")
-    if not os.path.exists(html_path):
-        # Fallback to local index.html if current working directory
-        html_path = "index.html"
-    return FileResponse(html_path)
+    if os.path.exists(html_path):
+        return make_no_cache_response(html_path, media_type="text/html; charset=utf-8")
+    raise HTTPException(status_code=404, detail="index.html not found")
+
+
+@app.get("/app_icon.png")
+def get_app_icon_png():
+    img_path = get_resource_path("app_icon.png")
+    if os.path.exists(img_path):
+        return make_no_cache_response(img_path, media_type="image/png")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+
+@app.get("/app_icon.ico")
+def get_app_icon_ico():
+    ico_path = get_resource_path("app_icon.ico")
+    if os.path.exists(ico_path):
+        return make_no_cache_response(ico_path, media_type="image/x-icon")
+    raise HTTPException(status_code=404, detail="Icon not found")
+
+
+@app.get("/style.css")
+def get_style_css():
+    css_path = get_resource_path("style.css")
+    if os.path.exists(css_path):
+        return make_no_cache_response(css_path, media_type="text/css; charset=utf-8")
+    raise HTTPException(status_code=404, detail="CSS not found")
 
 
 @app.get("/status")
@@ -65,7 +113,6 @@ def status():
 
 @app.post("/chat")
 def chat(request: ChatRequest):
-    # Verify local Ollama readiness first
     readiness = ollama_service.check_system_readiness()
     if not readiness["ready"]:
         raise HTTPException(
@@ -86,7 +133,6 @@ def chat(request: ChatRequest):
         }
 
     except Exception as e:
-        # Check if Ollama crashed during invocation
         err_msg = str(e)
         if "connection refused" in err_msg.lower() or "connect" in err_msg.lower():
             err_msg = (

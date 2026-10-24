@@ -1,4 +1,4 @@
-/* Pastel AI Standalone Offline CSS (Replaces Tailwind CDN) */
+﻿/* GHOSTMIND Standalone Offline CSS (Replaces Tailwind CDN) */
 
 *, *::before, *::after {
     box-sizing: border-box;
@@ -455,3 +455,17 @@ body {
     color: #b0a8c1;
     margin-top: 0.75rem;
 }
+
+.brand-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 0.85rem;
+}
+.welcome-cloud img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 1.25rem;
+}
+
