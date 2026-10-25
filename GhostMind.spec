@@ -1,4 +1,4 @@
-﻿# -*- mode: python ; coding: utf-8 -*-
+# -*- mode: python ; coding: utf-8 -*-
 import os
 from PyInstaller.utils.hooks import collect_all
 
@@ -7,6 +7,8 @@ datas = [
     ('style.css', '.'),
     ('app_icon.ico', '.'),
     ('app_icon.png', '.'),
+    ('alembic.ini', '.'),
+    ('alembic', 'alembic'),
 ]
 binaries = []
 hiddenimports = [
@@ -24,27 +26,46 @@ hiddenimports = [
     'webview',
     'clr_loader',
     'pythonnet',
+    'psycopg',
+    'psycopg.pq',
+    'sqlalchemy.dialects.postgresql.psycopg',
+    'core',
+    'models',
+    'schemas',
+    'services',
+    'routes',
 ]
 
-for pkg in [
+packages_to_collect = [
     'langchain',
     'langchain_core',
     'langchain_ollama',
-    'langgraph',
     'webview',
     'uvicorn',
     'fastapi',
     'starlette',
     'pydantic',
-    'ollama',
-]:
+    'sqlalchemy',
+    'alembic',
+    'psycopg',
+    'google.auth',
+    'google.oauth2',
+    'pypdf',
+    'docx',
+    'openpyxl',
+    'faster_whisper',
+    'jwt',
+    'cryptography'
+]
+
+for pkg in packages_to_collect:
     try:
         pkg_datas, pkg_binaries, pkg_hiddenimports = collect_all(pkg)
         datas += pkg_datas
         binaries += pkg_binaries
         hiddenimports += pkg_hiddenimports
     except Exception as e:
-        print(f"Warning collecting package {pkg}: {e}")
+        print(f"Notice: skipped auto-collect for {pkg}: {e}")
 
 a = Analysis(
     ['desktop_app.py'],
@@ -90,4 +111,3 @@ coll = COLLECT(
     upx_exclude=[],
     name='GHOSTMIND',
 )
-

@@ -1,24 +1,27 @@
-﻿<p align="center">
-  <img src="app_icon.png" width="120" height="120" alt="GHOSTMIND local AI assistant logo" style="border-radius: 24px; box-shadow: 0 8px 24px rgba(0,0,0,0.15);" />
+<p align="center">
+  <img src="app_icon.png" width="120" height="120" alt="GHOSTMIND AI OS logo" style="border-radius: 24px; box-shadow: 0 8px 24px rgba(140, 115, 190, 0.25);" />
 </p>
 
 <h1 align="center">GHOSTMIND</h1>
 
 <p align="center">
-  <strong>A Private, Offline-Capable AI Assistant for Windows</strong>
+  <strong>A Persistent, Personalized Local AI Operating System for Windows</strong>
 </p>
 
 <p align="center">
-  Run AI locally on your computer using Ollama and Qwen 2.5 3B — without cloud LLM API keys or per-token API costs.
+  100% Local Inference (Ollama & Faster-Whisper) • Google OAuth 2.0 • PostgreSQL Central Storage & RAG • Personalized Long-Term Memory
 </p>
 
 <p align="center">
-  <a href="#-quick-start-recommended">Quick Start</a> •
-  <a href="#-features">Features</a> •
-  <a href="#-why-use-a-local-ai-assistant">Why GHOSTMIND?</a> •
-  <a href="#-how-ghostmind-works">How It Works</a> •
-  <a href="#-technology-stack">Tech Stack</a> •
-  <a href="#-troubleshooting">Troubleshooting</a>
+  <a href="#-quick-start">Quick Start</a> •
+  <a href="#-core-features">Features</a> •
+  <a href="#-architecture--pipeline">Architecture</a> •
+  <a href="#-prerequisites">Prerequisites</a> •
+  <a href="#-google-oauth-setup">Google OAuth</a> •
+  <a href="#-postgresql--alembic-setup">Database Setup</a> •
+  <a href="#-local-ai-models">Local Models</a> •
+  <a href="#-windows-executable-packaging">Packaging</a> •
+  <a href="#-automated-testing">Testing</a>
 </p>
 
 <p align="center">
@@ -27,272 +30,184 @@
 
 ---
 
-## ⚡ Quick Start (Recommended)
+## ⚡ Quick Start
 
-If you are new here, you only need to run **one command**. Open your terminal (PowerShell or Command Prompt) in the project folder and run:
-
+### 1. Automated Setup (One-Click)
+Run `setup.bat` from Command Prompt or PowerShell:
 ```cmd
 setup.bat
 ```
 *(Or in PowerShell: `.\setup.bat`)*
 
-### What this single command does automatically:
-1. 🦙 **Checks & Sets Up Ollama**: Installs Ollama automatically if missing and downloads the local `qwen2.5:3b` model.
-2. 🐍 **Creates Python Environment**: Builds an isolated `venv` and installs all pinned packages from `requirements.txt`.
-3. 🖥️ **Creates Desktop Shortcut**: Places a branded `GHOSTMIND` shortcut with icon on your Windows Desktop.
-4. ✨ **Launches the App**: Opens the desktop chatbot window ready to use!
+**What this script does automatically:**
+1. 🦙 Verifies Ollama is installed and pulls `qwen2.5:3b` and `nomic-embed-text`.
+2. 🐍 Creates an isolated Python virtual environment (`venv`) and installs all pinned dependencies.
+3. 🐘 Initializes `.env` and executes Alembic schema migrations (`alembic upgrade head`).
+4. 🖥️ Creates a branded `GHOSTMIND` desktop shortcut on your Windows Desktop.
+5. 🚀 Launches the GHOSTMIND desktop application!
 
 ---
 
-## ❓ What Is GHOSTMIND?
+## 🌟 Core Features
 
-**GHOSTMIND** is a personal AI assistant and Windows desktop chatbot built with **Python**, **FastAPI**, **LangChain**, and **Ollama** running the **Qwen 2.5 3B** language model.
-
-It lets you chat with an AI directly on your own computer through a sleek desktop application instead of using a browser-based cloud chatbot. 
-
-GHOSTMIND is designed for anyone who wants:
-- 🔒 **Total Privacy**: Your conversations stay on your device and are never uploaded to cloud servers.
-- ✈️ **Offline Capability**: Chat freely without an internet connection after the one-time model download.
-- 💰 **Zero Cost**: No OpenAI or Anthropic API keys, no subscription tiers, and no per-token charges.
-- 🚀 **Effortless Windows Setup**: One command sets up everything from scratch.
+- 🔐 **Google OAuth 2.0-Only Authentication**: Secure server-side identity validation using Google's verified subject identifier (`sub`). No passwords stored, zero OTP, HttpOnly SameSite cookie sessions with SHA-256 token hashing at rest.
+- 🐘 **PostgreSQL Central Storage**: Complete relational persistence with SQLAlchemy 2.x and Alembic migrations across 9 models (`users`, `user_preferences`, `sessions`, `conversations`, `messages`, `documents`, `document_chunks`, `memories`, `background_jobs`).
+- 💬 **Persistent Conversation History**: Left collapsible sidebar featuring dynamic conversation retrieval, automatic smart title generation, full-text conversation search, rename, archive, and cascading deletion.
+- 🧠 **Personalized Long-Term AI Memory**: Bounded multi-layered context window combining recent messages, relevant user preferences, cross-conversation project context, and grounded RAG citations.
+- 🎙️ **Local Whisper Speech Recognition**: Zero-cloud local audio transcription powered by `faster-whisper` running on CPU with `int8` quantization. Real-time microphone capture with browser `MediaRecorder`.
+- 📁 **Multi-Format Document Uploads & RAG**: Secure parsing and vector indexing for `PDF`, `DOCX`, `TXT`, `MD`, `CSV`, `XLSX`, and `JSON`. SHA-256 content deduplication and user-isolated similarity search using 768-dimensional local embeddings via `nomic-embed-text`.
+- 🎨 **Modern Pastel Desktop Interface**: Built with modern CSS glassmorphism, responsive collapsible sidebar, document library modal, memory bank manager, and status indicators.
 
 ---
 
-## ✨ Features
+## 🏗️ Architecture & Pipeline
 
-- **Local AI Inference**: Powered by Qwen 2.5 3B running locally through Ollama.
-- **100% Privacy-Focused**: Prompts are processed entirely on your machine with zero data collection.
-- **Zero API Keys**: No credit cards, billing accounts, or API keys required.
-- **Full Offline Operation**: Works without an internet connection once the model is downloaded.
-- **One-Command Installation**: Automated setup script (`setup.bat`) configures the whole app.
-- **Native Windows Desktop Window**: Clean desktop app interface powered by Microsoft Edge WebView2 (via `pywebview`).
-- **Auto-Healing Service**: Checks and starts the local Ollama background engine automatically.
-- **Dynamic Port Conflict Handling**: Automatically finds the next free port if port 8000 is occupied.
-- **Pre-Packaged Standalone Executable**: Includes a standalone `.exe` option that requires no Python setup.
-- **Custom Desktop Branding**: Dedicated GHOSTMIND logo, Windows icon, and desktop shortcut.
+```mermaid
+graph TD
+    Client["Windows Desktop / Webview (Chromium)"] -->|HttpOnly Cookie / API| Router["FastAPI Server (main.py)"]
+    Router --> AuthRoute["/api/auth (Google OAuth / Sessions)"]
+    Router --> ChatRoute["/api/chat (LangChain + Ollama Qwen 2.5 3B)"]
+    Router --> ConvoRoute["/api/conversations (PostgreSQL History)"]
+    Router --> DocRoute["/api/documents (Upload & Extraction)"]
+    Router --> VoiceRoute["/api/voice (faster-whisper int8 CPU)"]
+    Router --> MemRoute["/api/memories (Cross-Conversation Memory)"]
 
----
-
-## 💡 Why Use a Local AI Assistant?
-
-| Feature | GHOSTMIND | Cloud AI Chatbots (ChatGPT / Claude) |
-| :--- | :---: | :---: |
-| **Runs on your computer** | **Yes** (100% Local) | No (Remote Cloud Servers) |
-| **Requires Cloud API Keys** | **No** | Yes / Paid Subscription |
-| **Chat data leaves your device** | **Never** | Yes (Sent to third-party servers) |
-| **Works offline (without internet)** | **Yes** | No |
-| **Per-token or monthly fees** | **$0 (Free forever)** | Monthly subscriptions / API billing |
-| **Dedicated Windows Desktop App** | **Yes** | Web Browser Tab |
-| **Python required for standalone .exe** | **No** (Self-contained) | N/A |
-
-> *Note: An internet connection is only needed once during initial setup to download Ollama and the language model.*
-
----
-
-## 📦 Installation Options
-
-### Option 1: One-Command Installation (Recommended for New Users)
-Clone or download this repository, open PowerShell or CMD in the project folder, and run:
-```cmd
-setup.bat
+    ChatRoute --> Pipeline["Bounded Context Pipeline"]
+    Pipeline -->|1. Scoped History| DB[(PostgreSQL 14+)]
+    Pipeline -->|2. Cosine Similarity| Chunks[(768-dim Vector Chunks)]
+    Pipeline -->|3. Active Memories| Memory[(User Memory Bank)]
+    Pipeline -->|4. Prompt + Context| Ollama["Local Ollama Engine (qwen2.5:3b)"]
 ```
-*(Or in PowerShell: `.\setup.bat`)*
 
-The script will automatically detect/install Ollama, download `qwen2.5:3b`, set up the Python environment, create a desktop shortcut, and launch GHOSTMIND.
-
----
-
-### Option 2: Run the Packaged Windows Executable (No Python Needed)
-If using the compiled distribution, ensure Ollama is installed and run:
-
-1. Install Ollama (one-line PowerShell):
-   ```powershell
-   winget install Ollama.Ollama -e --accept-source-agreements --accept-package-agreements
-   ```
-2. Download the model:
-   ```cmd
-   ollama pull qwen2.5:3b
-   ```
-3. Launch GHOSTMIND directly:
-   ```cmd
-   dist\GHOSTMIND\GHOSTMIND.exe
-   ```
+### Complete Request Pipeline
+1. **Authenticated User**: Request verified through cryptographically hashed session token in HttpOnly cookie.
+2. **Context Assembly**:
+   - Fetch last $N$ turns from the conversation in PostgreSQL.
+   - Detect stable project context and preferences (auto-extracted or manually saved).
+   - Generate query embedding using local `nomic-embed-text` (768-dim) and retrieve top-$K$ document chunks matching the user's files.
+   - Assemble bounded context under the model's token limits.
+3. **Local LLM Execution**: Invokes local Qwen 2.5 3B through LangChain with zero cloud data transmission.
+4. **Persistence**: Saves assistant reply with source document citations and timestamps.
 
 ---
 
-### Option 3: Manual Run from Source
-If you prefer running from Python source code:
+## 📋 Prerequisites
 
-```powershell
-# 1. Create and activate virtual environment
-python -m venv venv
-.\venv\Scripts\Activate.ps1
+1. **Operating System**: Windows 10 or 11 (64-bit).
+2. **Python**: 3.10 to 3.13 installed and added to `PATH`.
+3. **PostgreSQL**: PostgreSQL 14+ running locally (default port `5432`).
+4. **Ollama**: Local Ollama runtime installed from [ollama.com](https://ollama.com).
 
-# 2. Install pinned dependencies
-pip install -r requirements.txt
+---
 
-# 3. Pull the local model
+## 🔑 Google OAuth Setup
+
+GHOSTMIND requires Google OAuth 2.0 for single-click sign-in:
+
+1. Open the [Google Cloud Console](https://console.cloud.google.com/).
+2. Create a new project named **GHOSTMIND**.
+3. Go to **APIs & Services** > **OAuth consent screen**:
+   - User Type: **External**
+   - App Name: **GHOSTMIND**
+   - User Support Email: your email
+   - Scopes: `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile`
+4. Go to **APIs & Services** > **Credentials** > **Create Credentials** > **OAuth 2.0 Client ID**:
+   - Application Type: **Web application**
+   - Name: **GHOSTMIND Desktop**
+   - Authorized JavaScript origins: `http://127.0.0.1:8000`, `http://localhost:8000`
+   - Authorized redirect URIs: `http://127.0.0.1:8000/auth/google/callback`
+5. Copy your **Client ID** and **Client Secret** into your `.env` file:
+   ```env
+   GOOGLE_CLIENT_ID=your-client-id.apps.googleusercontent.com
+   GOOGLE_CLIENT_SECRET=your-client-secret
+   GOOGLE_REDIRECT_URI=http://127.0.0.1:8000/auth/google/callback
+   ```
+
+*(Note: In local offline mode without credentials, GHOSTMIND allows seamless "Continue as Local User" for local evaluation).*
+
+---
+
+## 🐘 PostgreSQL & Alembic Setup
+
+1. Make sure your local PostgreSQL service is running.
+2. Create the central database:
+   ```cmd
+   psql -U postgres -c "CREATE DATABASE ghostmind;"
+   ```
+3. Set your connection string in `.env`:
+   ```env
+   DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5432/ghostmind
+   ```
+4. Run schema migrations to HEAD:
+   ```cmd
+   venv\Scripts\python.exe -m alembic upgrade head
+   ```
+
+*(GHOSTMIND natively handles vector embeddings using dense 768-dimensional vectors stored in PostgreSQL. If the native C `pgvector` extension is installed, it uses hardware-accelerated HNSW/IVFFlat indexes; otherwise, it automatically utilizes seamless cosine similarity computation).*
+
+---
+
+## 🧠 Local AI Models
+
+### 1. Generative LLM: Qwen 2.5 3B
+```cmd
 ollama pull qwen2.5:3b
-
-# 4. Launch the desktop app
-python desktop_app.py
 ```
+Fast, resource-efficient 3-billion parameter model capable of deep instruction following and context reasoning.
+
+### 2. Embedding Model: Nomic Embed Text (768-dim)
+```cmd
+ollama pull nomic-embed-text
+```
+High-accuracy 768-dimensional local embedding model with 8192 context window.
+
+### 3. Speech-to-Text: Faster-Whisper
+Model files are stored in `~/.ghostmind/models/whisper/`. On first speech interaction, the `base` model (or model configured in `WHISPER_MODEL_SIZE`) downloads automatically and runs entirely offline on CPU with `int8` quantization.
 
 ---
 
-## 🔄 How GHOSTMIND Works
+## 🧪 Automated Testing
 
-GHOSTMIND connects a lightweight desktop interface to a local FastAPI backend, which uses LangChain to communicate directly with Ollama.
-
-```
-┌─────────────────────────────────┐
-│             User                │
-└────────────────┬────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────┐
-│   GHOSTMIND Desktop Window      │  (pywebview + HTML/CSS Interface)
-└────────────────┬────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────┐
-│        FastAPI Backend          │  (Local REST API on http://127.0.0.1:8000)
-└────────────────┬────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────┐
-│      LangChain Orchestrator     │  (Agent & Prompt Pipeline)
-└────────────────┬────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────┐
-│      Ollama Local Runtime       │  (Local Engine on http://127.0.0.1:11434)
-└────────────────┬────────────────┘
-                 │
-                 ▼
-┌─────────────────────────────────┐
-│       Qwen 2.5 3B Model         │  (Local Neural Weights on your Disk/GPU)
-└────────────────┬────────────────┘
-                 │
-                 ▼
-          Response Displayed
+Run the test suite with `pytest`:
+```cmd
+venv\Scripts\python.exe -m pytest tests/ -v
 ```
 
-Every word generated stays entirely on your computer.
+### Verified Test Matrix:
+- ✅ `test_auth_new_user_and_session_lifecycle`: User creation, session generation, verification, and revocation.
+- ✅ `test_auth_endpoints_with_mocked_google`: OAuth callback, cookie set, `/api/auth/me`, and logout.
+- ✅ `test_conversation_crud_and_cross_user_isolation`: CRUD, message ordering, smart titles, and cross-user data isolation.
+- ✅ `test_document_ingestion_and_rag_isolation`: Multi-format parsing, 768-dim embeddings, RAG retrieval, and document isolation.
+- ✅ `test_long_term_memory_and_bounded_context`: Auto memory extraction, persistence, and bounded context window assembly.
+- ✅ `test_whisper_voice_endpoint`: Local transcription endpoint, audio validation, and engine status.
+- ✅ `test_health_and_status_endpoints`: Database health check and diagnostic readiness.
+- ✅ `test_long_conversation_message_pagination`: High-volume chat pagination and ordering bounds.
+- ✅ `test_file_upload_validation_rejects_disallowed_types`: Path traversal and extension rejection.
+- ✅ `test_chat_pipeline_with_mocked_ollama`: Complete end-to-end user-to-response generation.
 
 ---
 
-## 🛠️ Technology Stack
+## 📦 Windows Executable Packaging
 
-| Technology | Purpose |
+To build the standalone Windows executable using PyInstaller:
+```cmd
+build.bat
+```
+The output directory will be created at `dist\GHOSTMIND\GHOSTMIND.exe`. Persistent application data (uploaded documents, vector chunks, whisper models) is saved to `%USERPROFILE%\.ghostmind\` so user data survives application upgrades.
+
+---
+
+## 🛠️ Troubleshooting
+
+| Issue | Resolution |
 | :--- | :--- |
-| **Python** | Core application logic and service orchestration |
-| **FastAPI** | High-performance asynchronous backend API |
-| **LangChain** | LLM integration, prompt templates, and agent orchestration |
-| **Ollama** | Local LLM runtime and inference engine |
-| **Qwen 2.5 3B** | Fast, high-accuracy local language model |
-| **HTML5 & CSS3** | Clean offline chatbot user interface |
-| **pywebview** | Native Windows desktop application window (Edge WebView2) |
-| **Uvicorn** | Embedded ASGI server |
-| **PyInstaller** | Bundles the complete project into a standalone `.exe` |
-| **Pillow** | Multi-resolution icon generation and asset processing |
+| **Ollama connection failed** | Run `ollama serve` in a terminal or check that port 11434 is open. |
+| **PostgreSQL connection refused** | Verify PostgreSQL service is running in `services.msc` and credentials in `.env` match. |
+| **Microphone not working** | Grant audio/microphone permissions when prompted in the application window or browser. |
+| **Google Sign-In Error** | Ensure `http://127.0.0.1:8000/auth/google/callback` is added to Authorized Redirect URIs in Google Cloud Console. |
+| **PyAV Audio Error** | Ensure `av==13.1.0` is installed (`pip install av==13.1.0`). |
 
 ---
 
-## 📁 Clean Project Structure
-
-```
-PersonalAI/
-│
-├── setup.bat                    <-- 🚀 1-Command full installer (Ollama + Venv + Shortcut + Launch)
-├── run.bat                      <-- ⚡ Quick launcher
-├── create_shortcut.bat          <-- 🖥️ Desktop shortcut creator
-├── build.bat                    <-- 🔨 Standalone executable compiler
-│
-├── desktop_app.py               <-- Desktop runner (Window lifecycle & server management)
-├── main.py                      <-- FastAPI backend & LangChain agent
-├── ollama_service.py            <-- Local Ollama service & model health checks
-│
-├── index.html                   <-- GHOSTMIND chatbot UI (Embedded logo & offline styling)
-├── style.css                    <-- Standalone offline CSS
-│
-├── app_icon.png                 <-- Application logo (PNG format)
-├── app_icon.ico                 <-- Windows application icon (ICO format)
-├── generate_icon.py             <-- Script generating app_icon.ico from app_icon.png
-│
-├── requirements.txt             <-- Strictly pinned package dependencies
-├── GhostMind.spec               <-- PyInstaller build specification
-│
-├── dist/
-│   └── GHOSTMIND/
-│       └── GHOSTMIND.exe        <-- Standalone Windows executable (No Python needed!)
-│
-└── README.md                    <-- Documentation
-```
-
----
-
-## 📦 Pinned Dependencies
-
-All dependencies are strictly pinned in [requirements.txt](requirements.txt) to guarantee zero version conflicts during installation:
-
-```txt
-fastapi==0.162.0
-uvicorn[standard]==0.54.0
-langchain==1.4.7
-langchain-core==1.7.0
-langchain-ollama==1.1.0
-langchain-google-genai==4.4.2
-pydantic==2.14.1
-python-dotenv==1.2.4
-pywebview==6.2.1
-pillow==13.0.0
-pyinstaller==6.22.3
-```
-
----
-
-## 🔧 Troubleshooting
-
-| Issue | Possible Cause | Solution |
-| :--- | :--- | :--- |
-| **"Ollama Offline" badge** | Local Ollama service is not running | Run `ollama serve` in a terminal or re-run `setup.bat`. |
-| **"Model Missing" banner** | Qwen 2.5 3B has not been downloaded | Run `ollama pull qwen2.5:3b` in your terminal. |
-| **Port Conflict** | Another program is using port 8000 | GHOSTMIND handles this automatically by scanning for the next free port (8001, 8002, etc.). |
-| **Desktop Window Fails to Open** | Missing WebView2 runtime | GHOSTMIND automatically falls back to your default browser. You can also install the Microsoft Edge WebView2 runtime. |
-| **Slow AI Responses** | High system load or CPU mode | Close heavy background apps. If you have an NVIDIA GPU, Ollama will automatically leverage GPU acceleration for faster speeds. |
-
----
-
-## 🔒 Privacy and Offline Usage
-
-- **Local Processing**: GHOSTMIND runs entirely on your hardware. Prompts are never sent to external servers, cloud providers, or third-party APIs.
-- **Offline Ready**: Once Ollama and `qwen2.5:3b` are downloaded during setup, you can turn off Wi-Fi and use GHOSTMIND completely offline.
-- **No Telemetry**: There is no tracking, telemetry, or analytics embedded in the application.
-
----
-
-## 🔮 Future Possibilities
-
-Potential future enhancements include:
-- Natural-language desktop automation and task management
-- Local document search and Retrieval-Augmented Generation (RAG)
-- Local conversation history and persistent session memory
-- Support for selecting other Ollama models (e.g., Llama 3, Mistral, Phi-3)
-- Custom user-defined prompt templates and system instructions
-
----
-
-## 🤝 Contributing
-
-Suggestions, bug reports, and contributions are welcome! If you encounter an issue, please open an issue on GitHub with your Windows version and steps to reproduce.
-
----
-
-<p align="center">
-  <strong>GHOSTMIND — You command. GHOSTMIND executes.</strong>
-</p>
-
-<p align="center">
-  <em>A local AI assistant for people who value privacy, control, and simplicity.</em>
-</p>
+## 📄 License
+Private & Local-First Personal AI Assistant. All processing stays on your hardware.
