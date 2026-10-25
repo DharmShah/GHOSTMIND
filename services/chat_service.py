@@ -1,4 +1,4 @@
-﻿import json
+import json
 import uuid
 import logging
 from typing import Dict, Any, List, Optional
@@ -83,7 +83,8 @@ def execute_chat_turn(
         user_id=user.id,
         conversation_id=conv.id,
         current_prompt=cleaned_prompt,
-        rag_context=rag_prompt_block
+        rag_context=rag_prompt_block,
+        exclude_message_id=user_msg.id
     )
 
     # 6. Check Ollama system readiness

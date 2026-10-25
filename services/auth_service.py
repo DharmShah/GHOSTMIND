@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional, Tuple
 from sqlalchemy.orm import Session
@@ -15,15 +15,24 @@ def get_or_create_user(
     display_name: str,
     avatar_url: Optional[str] = None
 ) -> User:
-    """Finds user by Google subject ID or registers a new user with default preferences."""
-    # Look up by verified Google subject ID
-    user = db.scalar(select(User).where(User.google_sub == google_sub))
+    """Finds user by Google subject ID or email, or registers a new user with default preferences."""
+    clean_email = email.strip().lower() if email else ""
     now = datetime.now(timezone.utc)
 
+    # 1. Look up by verified Google subject ID
+    user = db.scalar(select(User).where(User.google_sub == google_sub))
+
+    # 2. Fallback: look up by verified email to link account and prevent duplicate key violations
+    if not user and clean_email:
+        user = db.scalar(select(User).where(User.email == clean_email))
+
     if user:
-        # Update display name and avatar if changed
-        user.display_name = display_name
-        user.email = email
+        # Link verified Google subject ID and update profile
+        user.google_sub = google_sub
+        if clean_email:
+            user.email = clean_email
+        if display_name:
+            user.display_name = display_name
         if avatar_url:
             user.avatar_url = avatar_url
         user.last_login_at = now

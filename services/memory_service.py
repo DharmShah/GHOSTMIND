@@ -1,11 +1,11 @@
-﻿import uuid
+import uuid
 import re
 from datetime import datetime, timezone
 from typing import List, Optional, Tuple, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy import select, desc
 
-from models import Memory, Message, Conversation, UserPreference
+from models import User, Memory, Message, Conversation, UserPreference
 from core.config import settings
 
 def list_memories_for_user(db: Session, user_id: uuid.UUID, active_only: bool = False) -> List[Memory]:
@@ -126,7 +126,8 @@ def build_bounded_context(
     user_id: uuid.UUID,
     conversation_id: uuid.UUID,
     current_prompt: str,
-    rag_context: str = ""
+    rag_context: str = "",
+    exclude_message_id: Optional[uuid.UUID] = None
 ) -> Tuple[List[Dict[str, str]], List[str]]:
     """
     Assembles a bounded, multi-layered context window:
@@ -148,10 +149,20 @@ def build_bounded_context(
         "You provide concise, accurate, and deeply knowledgeable answers."
     ]
 
+    # Include user profile identity if known
+    user = db.scalar(select(User).where(User.id == user_id))
+    if user and user.display_name and user.display_name not in ("GHOSTMIND User", ""):
+        system_parts.append(
+            f"AUTHENTICATED USER IDENTITY:\n- Name: {user.display_name}\n- Email: {user.email}"
+        )
+
     if active_memories:
         memory_lines = [f"- {m.memory_text}" for m in active_memories[:settings.MAX_MEMORIES]]
         system_parts.append(
-            "\n[SAVED USER MEMORY & PROJECT CONTEXT]\n" + "\n".join(memory_lines)
+            "CORE MEMORY INSTRUCTIONS:\n"
+            "- The following are the user's verified persistent memories, preferences, and personal facts.\n"
+            "- Always use these saved facts to answer questions about the user's identity, name, preferences, and project settings directly and accurately.\n\n"
+            "[SAVED USER MEMORY & FACTS]\n" + "\n".join(memory_lines)
         )
 
     if rag_context:
@@ -163,15 +174,19 @@ def build_bounded_context(
         {"role": "system", "content": system_message}
     ]
 
-    # 3. Load bounded recent messages from conversation history
-    recent_msgs = db.scalars(
+    # 3. Load bounded recent messages from conversation history (excluding the current unresponded user turn)
+    history_query = (
         select(Message)
         .where(
             Message.conversation_id == conversation_id,
             Message.user_id == user_id
         )
-        .order_by(desc(Message.created_at))
-        .limit(settings.MAX_RECENT_MESSAGES)
+    )
+    if exclude_message_id:
+        history_query = history_query.where(Message.id != exclude_message_id)
+
+    recent_msgs = db.scalars(
+        history_query.order_by(desc(Message.created_at)).limit(settings.MAX_RECENT_MESSAGES)
     ).all()
 
     # Reorder chronologically
@@ -182,7 +197,7 @@ def build_bounded_context(
                 "content": msg.content
             })
 
-    # 4. Append current prompt
+    # 4. Append current prompt as active final turn
     messages_payload.append({
         "role": "user",
         "content": current_prompt
