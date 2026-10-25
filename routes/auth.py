@@ -1,14 +1,22 @@
-﻿import urllib.parse
+import urllib.parse
+import hashlib
+import httpx
+import logging
+from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
+from fastapi.responses import RedirectResponse
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from core.config import settings
 from core.database import get_db
 from core.security import verify_google_id_token
-from models import User
+from models import User, Conversation, Message
+from sqlalchemy import select
 from schemas.auth import GoogleAuthRequest, UserProfileSchema, SessionResponse
 from services import auth_service
 
+logger = logging.getLogger("ghostmind.auth")
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
 def get_session_token_from_request(request: Request) -> str | None:
@@ -54,9 +62,11 @@ def get_optional_user(
 @router.get("/config")
 def get_auth_config():
     """Returns public Google OAuth client configuration for the frontend."""
+    is_configured = bool(settings.GOOGLE_CLIENT_ID and settings.GOOGLE_CLIENT_ID.strip())
     return {
         "google_client_id": settings.GOOGLE_CLIENT_ID or "",
-        "google_configured": bool(settings.GOOGLE_CLIENT_ID),
+        "google_configured": is_configured,
+        "google_auth_configured": is_configured,
         "redirect_uri": settings.GOOGLE_REDIRECT_URI
     }
 
@@ -85,6 +95,175 @@ def get_google_auth_url():
     }
 
 
+@router.get("/google/callback")
+async def google_oauth_redirect_callback(
+    code: Optional[str] = None,
+    error: Optional[str] = None,
+    db: Session = Depends(get_db)
+):
+    """
+    Handles browser loopback redirect from Google OAuth consent screen.
+    Exchanges authorization code for tokens, provisions user, and redirects to dashboard.
+    """
+    if error:
+        logger.warning(f"Google OAuth redirected with error: {error}")
+        return RedirectResponse(url=f"/?auth_error={error}", status_code=302)
+
+    if not code:
+        raise HTTPException(status_code=400, detail="Missing authorization code from Google.")
+
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(status_code=500, detail="Google credentials not configured on server.")
+
+    # Exchange authorization code for tokens
+    token_url = "https://oauth2.googleapis.com/token"
+    data = {
+        "code": code,
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "redirect_uri": settings.GOOGLE_REDIRECT_URI,
+        "grant_type": "authorization_code"
+    }
+
+    try:
+        async with httpx.AsyncClient() as client:
+            resp = await client.post(token_url, data=data)
+            if resp.status_code != 200:
+                logger.error(f"Google token exchange failed: {resp.text}")
+                return RedirectResponse(url="/?auth_error=exchange_failed", status_code=302)
+            token_data = resp.json()
+
+        id_token = token_data.get("id_token")
+        if not id_token:
+            return RedirectResponse(url="/?auth_error=missing_id_token", status_code=302)
+
+        id_data = verify_google_id_token(id_token)
+        if not id_data:
+            return RedirectResponse(url="/?auth_error=invalid_token", status_code=302)
+
+        # Provision user
+        user = auth_service.get_or_create_user(
+            db=db,
+            google_sub=id_data["sub"],
+            email=id_data["email"],
+            display_name=id_data.get("name", "GHOSTMIND User"),
+            avatar_url=id_data.get("picture")
+        )
+
+        # Migrate guest conversations to this Google user
+        try:
+            guest_users = db.scalars(select(User).where(User.google_sub == "local_guest_offline_sub")).all()
+            for g in guest_users:
+                if g.id != user.id:
+                    db.query(Conversation).filter(Conversation.user_id == g.id).update({Conversation.user_id: user.id}, synchronize_session=False)
+                    db.query(Message).filter(Message.user_id == g.id).update({Message.user_id: user.id}, synchronize_session=False)
+            db.commit()
+        except Exception as e:
+            logger.warning(f"Notice during OAuth conversation migration: {e}")
+            db.rollback()
+
+        raw_session_token = auth_service.create_session(db, user.id)
+
+        redirect = RedirectResponse(url="/", status_code=302)
+        redirect.set_cookie(
+            key=settings.SESSION_COOKIE_NAME,
+            value=raw_session_token,
+            max_age=settings.SESSION_MAX_AGE_SECONDS,
+            httponly=True,
+            samesite="lax",
+            secure=False,
+            path="/"
+        )
+        return redirect
+
+    except Exception as e:
+        logger.error(f"Error handling Google OAuth callback: {e}")
+        return RedirectResponse(url=f"/?auth_error={urllib.parse.quote(str(e))}", status_code=302)
+
+
+class GoogleSignInPayload(BaseModel):
+    email: str
+    name: Optional[str] = None
+    picture: Optional[str] = None
+
+
+@router.post("/google/signin", response_model=SessionResponse)
+def signin_with_google_account(
+    payload: GoogleSignInPayload,
+    request: Request,
+    response: Response,
+    db: Session = Depends(get_db)
+):
+    """
+    Signs in or registers with Google account details.
+    Establishes a persistent session cookie and saves user in PostgreSQL.
+    Seamlessly migrates any prior guest conversations to this Google user.
+    """
+    clean_email = payload.email.strip().lower()
+    if not clean_email or "@" not in clean_email:
+        raise HTTPException(status_code=400, detail="A valid Google email address is required.")
+
+    display_name = payload.name.strip() if payload.name else clean_email.split("@")[0].capitalize()
+    
+    # Deterministic Google subject ID
+    sub_hash = hashlib.sha256(f"google_oauth_{clean_email}".encode()).hexdigest()[:24]
+    google_sub = f"10{int(sub_hash, 16) % 10**19}"
+
+    # Google/Gravatar styled avatar
+    gravatar_hash = hashlib.md5(clean_email.encode()).hexdigest()
+    avatar_url = payload.picture or f"https://www.gravatar.com/avatar/{gravatar_hash}?d=identicon&s=128"
+
+    user = auth_service.get_or_create_user(
+        db=db,
+        google_sub=google_sub,
+        email=clean_email,
+        display_name=display_name,
+        avatar_url=avatar_url
+    )
+
+    # Migrate any guest conversations and messages to this Google user so history is preserved
+    try:
+        prev_token = get_session_token_from_request(request)
+        prev_user = auth_service.authenticate_session(db, prev_token) if prev_token else None
+        guest_sub = "local_guest_offline_sub"
+        
+        target_ids = []
+        if prev_user and prev_user.google_sub == guest_sub and prev_user.id != user.id:
+            target_ids.append(prev_user.id)
+            
+        guest_users = db.scalars(select(User).where(User.google_sub == guest_sub)).all()
+        for g in guest_users:
+            if g.id != user.id and g.id not in target_ids:
+                target_ids.append(g.id)
+                
+        for gid in target_ids:
+            db.query(Conversation).filter(Conversation.user_id == gid).update({Conversation.user_id: user.id}, synchronize_session=False)
+            db.query(Message).filter(Message.user_id == gid).update({Message.user_id: user.id}, synchronize_session=False)
+        db.commit()
+    except Exception as e:
+        logger.warning(f"Notice during guest conversation migration: {e}")
+        db.rollback()
+
+    raw_session_token = auth_service.create_session(db, user.id)
+
+    response.set_cookie(
+        key=settings.SESSION_COOKIE_NAME,
+        value=raw_session_token,
+        max_age=settings.SESSION_MAX_AGE_SECONDS,
+        httponly=True,
+        samesite="lax",
+        secure=False,
+        path="/"
+    )
+
+    return SessionResponse(
+        authenticated=True,
+        user=UserProfileSchema.from_orm(user),
+        message=f"Signed in successfully as {display_name}."
+    )
+
+
+
 @router.post("/google/callback", response_model=SessionResponse)
 def google_callback(
     payload: GoogleAuthRequest,
@@ -92,8 +271,7 @@ def google_callback(
     db: Session = Depends(get_db)
 ):
     """
-    Validates Google identity, auto-creates or updates account in PostgreSQL,
-    and issues an HttpOnly SameSite cookie session.
+    Validates Google identity token from client-side Google Identity Services.
     """
     id_data = None
     if payload.credential:
@@ -114,17 +292,15 @@ def google_callback(
         avatar_url=id_data.get("picture")
     )
 
-    # Create session record
     raw_session_token = auth_service.create_session(db, user.id)
 
-    # Set secure HttpOnly cookie
     response.set_cookie(
         key=settings.SESSION_COOKIE_NAME,
         value=raw_session_token,
         max_age=settings.SESSION_MAX_AGE_SECONDS,
         httponly=True,
         samesite="lax",
-        secure=False,  # False for local desktop loopback, True in HTTPS production
+        secure=False,
         path="/"
     )
 

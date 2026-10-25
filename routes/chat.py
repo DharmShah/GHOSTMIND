@@ -1,12 +1,13 @@
-﻿import uuid
+import uuid
 from typing import Optional, List, Dict, Any
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from core.config import settings
 from core.database import get_db
 from models import User
-from routes.auth import get_current_user, get_optional_user
+from routes.auth import get_optional_user
 from services import chat_service, auth_service
 
 router = APIRouter(prefix="/api/chat", tags=["Chat & RAG"])
@@ -26,20 +27,31 @@ class ChatTurnResponse(BaseModel):
 @router.post("", response_model=ChatTurnResponse)
 def chat_turn(
     payload: ChatTurnRequest,
+    response: Response,
     current_user: User | None = Depends(get_optional_user),
     db: Session = Depends(get_db)
 ):
     """
     Unified chat endpoint integrating RAG, long-term memory, and conversation persistence.
-    If running locally without auth, falls back gracefully to a default local profile.
+    If running locally without auth, establishes a local session and persists conversation.
     """
     if not current_user:
-        # Auto-create or obtain local guest/offline user profile
         current_user = auth_service.get_or_create_user(
             db=db,
             google_sub="local_guest_offline_sub",
             email="local_user@ghostmind.local",
             display_name="GHOSTMIND User"
+        )
+        # Establish session cookie so conversations persist and load into sidebar
+        raw_session_token = auth_service.create_session(db, current_user.id)
+        response.set_cookie(
+            key=settings.SESSION_COOKIE_NAME,
+            value=raw_session_token,
+            max_age=settings.SESSION_MAX_AGE_SECONDS,
+            httponly=True,
+            samesite="lax",
+            secure=False,
+            path="/"
         )
 
     try:

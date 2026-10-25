@@ -52,14 +52,44 @@
                     </button>
                 </div>
 
-                <div class="sidebar-footer">
-                    <div class="user-profile-badge">
-                        <img id="userAvatar" src="app_icon.png" alt="User" class="user-avatar">
-                        <div class="user-info">
-                            <div class="user-name" id="userNameDisplay">Local User</div>
-                            <div class="user-email" id="userEmailDisplay">local@ghostmind.ai</div>
+                <div class="sidebar-footer" id="sidebarFooter">
+                    <!-- Unauthenticated / Guest Mode -->
+                    <div id="unauthenticatedState" class="unauth-state">
+                        <button class="btn-sidebar-signin" id="btnSidebarSignIn" title="Sign in with your Google account">
+                            <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
+                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                            </svg>
+                            <div class="signin-btn-text">
+                                <span class="signin-main">Sign in with Google</span>
+                                <span class="signin-sub">Sync chats &amp; memory</span>
+                            </div>
+                        </button>
+                    </div>
+
+                    <!-- Authenticated State (Google Account Connected) -->
+                    <div id="authenticatedState" class="user-profile-badge" style="display:none;">
+                        <div class="avatar-wrapper">
+                            <img id="userAvatar" src="app_icon.png" alt="Google Avatar" class="user-avatar">
+                            <div class="google-badge-overlay" title="Connected with Google">
+                                <svg width="9" height="9" viewBox="0 0 24 24">
+                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                                </svg>
+                            </div>
                         </div>
-                        <button class="btn-logout" id="btnLogout" title="Sign Out">
+                        <div class="user-info">
+                            <div class="user-name-row">
+                                <span class="user-name" id="userNameDisplay">Google User</span>
+                                <span class="signed-in-pill">Google</span>
+                            </div>
+                            <div class="user-email" id="userEmailDisplay">user@gmail.com</div>
+                        </div>
+                        <button class="btn-logout" id="btnLogout" title="Sign Out of Google Account">
                             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                         </button>
                     </div>
@@ -198,20 +228,46 @@
         </div>
     </div>
 
-    <!-- Google Sign-In Overlay -->
+    <!-- Google Sign-In Modal -->
     <div class="modal-overlay" id="modalAuth" style="display:none;">
-        <div class="modal-card" style="max-width:24rem;text-align:center;">
-            <div class="modal-header" style="justify-content:center;border-bottom:none;padding-top:1.5rem;">
-                <img src="app_icon.png" alt="GHOSTMIND Logo" style="width:64px;height:64px;object-fit:contain;">
+        <div class="modal-card" style="max-width:26rem;text-align:center;">
+            <div class="modal-header" style="justify-content:space-between;border-bottom:none;padding:1.25rem 1.25rem 0.5rem;">
+                <div style="width:24px;"></div>
+                <img src="app_icon.png" alt="GHOSTMIND Logo" style="width:56px;height:56px;object-fit:contain;">
+                <button class="modal-close" onclick="closeModal('modalAuth')">&times;</button>
             </div>
             <div class="modal-body" style="padding:0 1.5rem 1.5rem;">
-                <h2 style="font-size:1.35rem;font-weight:700;color:#383248;margin-bottom:0.25rem;">GHOSTMIND</h2>
-                <div style="font-size:12.5px;color:#8f86a2;margin-bottom:1.5rem;">Sign in with Google to sync conversations, documents & memories</div>
-                
-                <button id="btnGoogleSignIn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:0.75rem;padding:0.75rem;border-radius:0.75rem;border:1px solid #dadce0;background:#ffffff;font-size:14px;font-weight:600;color:#3c4043;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
-                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                    Continue with Google
-                </button>
+                <h2 style="font-size:1.35rem;font-weight:700;color:#383248;margin-bottom:0.25rem;">Sign In with Google</h2>
+                <div style="font-size:12.5px;color:#8f86a2;margin-bottom:1.25rem;">Sign in to sync your conversation history, document intelligence &amp; long-term memories in PostgreSQL</div>
+
+                <!-- Google OAuth browser button (shown if Google Client ID is configured) -->
+                <div id="googleOAuthSection" style="display:none;margin-bottom:1rem;">
+                    <button id="btnGoogleOAuth" class="btn-google-action">
+                        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                        <span>Continue with Google Browser OAuth</span>
+                    </button>
+                    <div style="margin:0.75rem 0;display:flex;align-items:center;gap:0.5rem;font-size:11px;color:#bbb;">
+                        <div style="flex:1;height:1px;background:#eee;"></div>
+                        <span>OR SIGN IN DIRECTLY</span>
+                        <div style="flex:1;height:1px;background:#eee;"></div>
+                    </div>
+                </div>
+
+                <!-- Instant Google Account Sign In Form -->
+                <form id="googleSignInForm" onsubmit="event.preventDefault(); handleGoogleDirectSignIn();" style="display:flex;flex-direction:column;gap:0.75rem;text-align:left;">
+                    <div>
+                        <label style="font-size:11.5px;font-weight:600;color:#554c68;display:block;margin-bottom:0.25rem;">Google Email Address *</label>
+                        <input type="email" id="inputGoogleEmail" required placeholder="name@gmail.com" style="width:100%;box-sizing:border-box;padding:0.6rem 0.8rem;border:1.5px solid #dfd8ed;border-radius:0.65rem;font-size:13px;outline:none;background:#faf8fe;">
+                    </div>
+                    <div>
+                        <label style="font-size:11.5px;font-weight:600;color:#554c68;display:block;margin-bottom:0.25rem;">Your Name (Optional)</label>
+                        <input type="text" id="inputGoogleName" placeholder="e.g. Dharm Shah" style="width:100%;box-sizing:border-box;padding:0.6rem 0.8rem;border:1.5px solid #dfd8ed;border-radius:0.65rem;font-size:13px;outline:none;background:#faf8fe;">
+                    </div>
+                    <button type="submit" id="btnSubmitGoogleSignIn" class="btn-google-action" style="margin-top:0.25rem;">
+                        <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                        <span>Sign In with Google</span>
+                    </button>
+                </form>
 
                 <div style="margin:1rem 0;display:flex;align-items:center;gap:0.5rem;font-size:11px;color:#bbb;">
                     <div style="flex:1;height:1px;background:#eee;"></div>
@@ -220,7 +276,7 @@
                 </div>
 
                 <button id="btnContinueGuest" style="width:100%;padding:0.6rem;border-radius:0.75rem;border:1px solid #dfd8ec;background:#faf8fe;font-size:13px;color:#675883;font-weight:500;cursor:pointer;">
-                    Continue as Local Offline User
+                    Continue as Offline Guest
                 </button>
             </div>
         </div>
@@ -250,12 +306,20 @@
         const btnAttachFile = document.getElementById('btnAttachFile');
         const fileUploadInput = document.getElementById('fileUploadInput');
         const btnVoiceRecord = document.getElementById('btnVoiceRecord');
+        const unauthenticatedState = document.getElementById('unauthenticatedState');
+        const authenticatedState = document.getElementById('authenticatedState');
+        const btnSidebarSignIn = document.getElementById('btnSidebarSignIn');
         const btnLogout = document.getElementById('btnLogout');
         const userAvatar = document.getElementById('userAvatar');
         const userNameDisplay = document.getElementById('userNameDisplay');
         const userEmailDisplay = document.getElementById('userEmailDisplay');
         const actionStatusBanner = document.getElementById('actionStatusBanner');
         const actionStatusMessage = document.getElementById('actionStatusMessage');
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
 
         function openModal(id) { document.getElementById(id).style.display = 'flex'; }
         function closeModal(id) { document.getElementById(id).style.display = 'none'; }
@@ -323,45 +387,129 @@
         // 2. Authentication Flow
         async function checkAuth() {
             try {
-                const res = await fetch('/api/auth/me');
-                if (res.ok) {
-                    currentUser = await res.json();
-                    updateUserUI(currentUser);
-                    closeModal('modalAuth');
-                } else {
+                // Check public OAuth configuration
+                try {
                     const cfgRes = await fetch('/api/auth/config');
-                    const cfg = await cfgRes.json();
-                    if (cfg.google_auth_configured) {
-                        openModal('modalAuth');
-                    } else {
-                        userNameDisplay.textContent = 'Local Guest';
-                        userEmailDisplay.textContent = 'local@ghostmind.ai';
+                    if (cfgRes.ok) {
+                        const cfg = await cfgRes.json();
+                        const oauthSection = document.getElementById('googleOAuthSection');
+                        if (oauthSection && cfg.google_auth_configured) {
+                            oauthSection.style.display = 'block';
+                        }
+                    }
+                } catch (e) {
+                    console.warn('OAuth config notice:', e);
+                }
+
+                // Check active session
+                const res = await fetch('/api/auth/me', { credentials: 'include' });
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.authenticated && data.user) {
+                        currentUser = data.user;
+                        updateUserUI(currentUser, true);
+                        closeModal('modalAuth');
+                        return;
                     }
                 }
+                currentUser = null;
+                updateUserUI(null, false);
             } catch (err) {
                 console.warn('Auth check error:', err);
+                currentUser = null;
+                updateUserUI(null, false);
             }
         }
 
-        function updateUserUI(user) {
-            userNameDisplay.textContent = user.display_name || 'User';
-            userEmailDisplay.textContent = user.email || 'user@ghostmind.ai';
-            if (user.picture_url) userAvatar.src = user.picture_url;
-        }
-
-        document.getElementById('btnGoogleSignIn').addEventListener('click', async () => {
-            try {
-                const res = await fetch('/api/auth/google/url');
-                const data = await res.json();
-                if (data.url) {
-                    window.location.href = data.url;
-                } else {
-                    alert('Google OAuth credentials not configured in .env yet.');
+        function updateUserUI(user, isAuthenticated) {
+            if (isAuthenticated && user) {
+                if (unauthenticatedState) unauthenticatedState.style.display = 'none';
+                if (authenticatedState) authenticatedState.style.display = 'flex';
+                if (userNameDisplay) userNameDisplay.textContent = user.display_name || user.email.split('@')[0];
+                if (userEmailDisplay) userEmailDisplay.textContent = user.email || '';
+                if (userAvatar) {
+                    userAvatar.src = user.avatar_url || user.picture_url || 'app_icon.png';
                 }
-            } catch (err) {
-                alert('Could not start Google Sign-In: ' + err.message);
+            } else {
+                if (unauthenticatedState) unauthenticatedState.style.display = 'block';
+                if (authenticatedState) authenticatedState.style.display = 'none';
             }
-        });
+        }
+
+        // Sign In button in Sidebar
+        if (btnSidebarSignIn) {
+            btnSidebarSignIn.addEventListener('click', () => {
+                openModal('modalAuth');
+            });
+        }
+
+        // Direct Google Sign-In Form Handler
+        async function handleGoogleDirectSignIn() {
+            const emailInput = document.getElementById('inputGoogleEmail');
+            const nameInput = document.getElementById('inputGoogleName');
+            const submitBtn = document.getElementById('btnSubmitGoogleSignIn');
+
+            const email = emailInput ? emailInput.value.trim() : '';
+            const name = nameInput ? nameInput.value.trim() : '';
+
+            if (!email) {
+                alert('Please enter your Google account email.');
+                return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span>Signing in...</span>';
+
+            try {
+                const res = await fetch('/api/auth/google/signin', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    credentials: 'include',
+                    body: JSON.stringify({ email: email, name: name })
+                });
+
+                if (!res.ok) {
+                    const err = await res.json();
+                    throw new Error(err.detail || 'Sign-in failed');
+                }
+
+                const data = await res.json();
+                currentUser = data.user;
+                updateUserUI(currentUser, true);
+                closeModal('modalAuth');
+                showBanner(`Signed in as ${currentUser.display_name} (${currentUser.email})`);
+                setTimeout(hideBanner, 4000);
+
+                // Reload conversations so all user and migrated chats appear in the sidebar!
+                await loadConversations();
+            } catch (err) {
+                alert('Could not sign in: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                    <span>Sign In with Google</span>
+                `;
+            }
+        }
+
+        // Live Google OAuth Consent Button
+        const btnGoogleOAuth = document.getElementById('btnGoogleOAuth');
+        if (btnGoogleOAuth) {
+            btnGoogleOAuth.addEventListener('click', async () => {
+                try {
+                    const res = await fetch('/api/auth/google/url');
+                    const data = await res.json();
+                    if (data.url) {
+                        window.location.href = data.url;
+                    } else {
+                        alert('Google OAuth credentials not configured in .env yet.');
+                    }
+                } catch (err) {
+                    alert('Could not start Google Sign-In: ' + err.message);
+                }
+            });
+        }
 
         document.getElementById('btnContinueGuest').addEventListener('click', () => {
             closeModal('modalAuth');
@@ -369,8 +517,12 @@
 
         btnLogout.addEventListener('click', async () => {
             try {
-                await fetch('/api/auth/logout', { method: 'POST' });
-                window.location.reload();
+                await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+                currentUser = null;
+                updateUserUI(null, false);
+                await loadConversations();
+                showBanner('Signed out of Google account.');
+                setTimeout(hideBanner, 3000);
             } catch (e) {
                 console.error(e);
             }
@@ -379,14 +531,13 @@
         // 3. Conversation Management
         async function loadConversations() {
             try {
-                const res = await fetch('/api/conversations');
+                const res = await fetch('/api/conversations', { credentials: 'include' });
                 if (res.ok) {
                     conversations = await res.json();
                     renderConversationList(conversations);
                 }
             } catch (err) {
                 console.error('Failed to load conversations:', err);
-            }
         }
 
         function renderConversationList(list) {
@@ -433,7 +584,7 @@
             if (match) chatHeaderTitle.textContent = match.title;
 
             try {
-                const res = await fetch(`/api/conversations/${id}`);
+                const res = await fetch(`/api/conversations/${id}`, { credentials: 'include' });
                 if (res.ok) {
                     const data = await res.json();
                     chatMessages.innerHTML = '';
@@ -450,7 +601,7 @@
             } catch (err) {
                 console.error(err);
             }
-            loadConversations();
+            renderConversationList(conversations);
         }
 
         async function renameConversation(id, oldTitle) {
@@ -459,6 +610,7 @@
                 await fetch(`/api/conversations/${id}`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
                     body: JSON.stringify({ title: newTitle.trim() })
                 });
                 await loadConversations();
@@ -468,7 +620,7 @@
 
         async function deleteConversation(id) {
             if (confirm('Delete this conversation? All associated messages will be permanently removed.')) {
-                await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+                await fetch(`/api/conversations/${id}`, { method: 'DELETE', credentials: 'include' });
                 if (activeConversationId === id) btnNewChat.click();
                 await loadConversations();
             }
@@ -498,6 +650,7 @@
                 const res = await fetch('/api/chat', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
+                    credentials: 'include',
                     body: JSON.stringify({
                         message: text,
                         conversation_id: activeConversationId
@@ -509,13 +662,15 @@
                 const data = await res.json();
                 typingDiv.remove();
 
-                if (data.conversation_id && !activeConversationId) {
-                    activeConversationId = data.conversation_id;
-                    await loadConversations();
+                activeConversationId = data.conversation_id;
+                if (data.title) {
+                    chatHeaderTitle.textContent = data.title;
                 }
 
                 appendMessage('assistant', data.response, data.sources);
                 scrollToBottom();
+
+                // Refresh conversation list so the newly created conversation immediately appears in sidebar
                 await loadConversations();
 
             } catch (err) {

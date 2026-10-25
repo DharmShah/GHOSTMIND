@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import logging
 from contextlib import asynccontextmanager
@@ -85,6 +85,10 @@ app.include_router(documents_router)
 app.include_router(memories_router)
 app.include_router(voice_router)
 app.include_router(health_router)
+
+# Mount loopback OAuth redirect route
+from routes.auth import google_oauth_redirect_callback
+app.add_api_route("/auth/google/callback", google_oauth_redirect_callback, methods=["GET"])
 
 # Static and Webview Endpoints
 @app.get("/")

@@ -1,4 +1,4 @@
-﻿/* GHOSTMIND Standalone Offline CSS */
+/* GHOSTMIND Standalone Offline CSS */
 
 *, *::before, *::after {
     box-sizing: border-box;
@@ -259,9 +259,9 @@ body {
     color: #7952b3;
 }
 
-/* User Profile in Sidebar Footer */
+/* User Profile & Auth in Sidebar Footer */
 .sidebar-footer {
-    padding: 0.75rem 1rem;
+    padding: 0.75rem 0.85rem;
     border-top: 1px solid #f0ebf8;
     background-color: #ffffff;
     display: flex;
@@ -269,23 +269,103 @@ body {
     justify-content: space-between;
 }
 
-.user-profile-badge {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    overflow: hidden;
+.unauth-state {
+    width: 100%;
 }
 
-.user-avatar {
-    width: 2rem;
-    height: 2rem;
-    border-radius: 50%;
-    object-fit: cover;
-    background-color: #eee8ff;
+.btn-sidebar-signin {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid #e2d9f3;
+    background: linear-gradient(135deg, #ffffff 0%, #faf8ff 100%);
+    color: #433857;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    box-shadow: 0 1px 3px rgba(103, 67, 157, 0.06);
+}
+
+.btn-sidebar-signin:hover {
+    border-color: #cbb9f5;
+    background: #f5f0fd;
+    box-shadow: 0 3px 8px rgba(103, 67, 157, 0.12);
+    transform: translateY(-1px);
+}
+
+.google-icon {
     flex-shrink: 0;
 }
 
+.signin-btn-text {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.signin-main {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #3e384c;
+    line-height: 1.2;
+}
+
+.signin-sub {
+    font-size: 0.675rem;
+    color: #9287a6;
+    line-height: 1.2;
+    margin-top: 1px;
+}
+
+.user-profile-badge {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    overflow: hidden;
+    width: 100%;
+}
+
+.avatar-wrapper {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.user-avatar {
+    width: 2.25rem;
+    height: 2.25rem;
+    border-radius: 50%;
+    object-fit: cover;
+    background-color: #eee8ff;
+    border: 2px solid #eadefc;
+    display: block;
+}
+
+.google-badge-overlay {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 14px;
+    height: 14px;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .user-info {
+    overflow: hidden;
+    flex: 1;
+}
+
+.user-name-row {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
     overflow: hidden;
 }
 
@@ -298,12 +378,24 @@ body {
     text-overflow: ellipsis;
 }
 
+.signed-in-pill {
+    font-size: 0.625rem;
+    font-weight: 600;
+    padding: 0.1rem 0.35rem;
+    border-radius: 0.35rem;
+    background: #e8f0fe;
+    color: #1a73e8;
+    letter-spacing: 0.02em;
+    flex-shrink: 0;
+}
+
 .user-email {
     font-size: 0.7rem;
     color: #9d95ad;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    margin-top: 1px;
 }
 
 .btn-logout {
@@ -313,12 +405,39 @@ body {
     cursor: pointer;
     padding: 0.35rem;
     border-radius: 0.5rem;
-    transition: color 0.2s;
+    transition: all 0.2s;
+    flex-shrink: 0;
 }
 
 .btn-logout:hover {
     color: #e53e3e;
+    background: #fff1f1;
 }
+
+.btn-google-action {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    border: 1px solid #dadce0;
+    background: #ffffff;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #3c4043;
+    cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: all 0.2s ease;
+}
+
+.btn-google-action:hover {
+    background: #f8fafd;
+    border-color: #c2c7d0;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+}
+
 
 /* Chat Main Pane */
 .chat-main {
