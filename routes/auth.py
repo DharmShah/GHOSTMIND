@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from core.config import settings
 from core.database import get_db
 from core.security import verify_google_id_token
-from models import User, Conversation, Message
+from models import User, Conversation, Message, Memory, Document
 from sqlalchemy import select
 from schemas.auth import GoogleAuthRequest, UserProfileSchema, SessionResponse
 from services import auth_service
@@ -86,7 +86,7 @@ def get_google_auth_url():
         "response_type": "code",
         "scope": "openid email profile",
         "access_type": "offline",
-        "prompt": "select_account consent",
+        "prompt": "select_account",
     }
     url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
     return {
@@ -150,21 +150,24 @@ async def google_oauth_redirect_callback(
             avatar_url=id_data.get("picture")
         )
 
-        # Migrate guest conversations to this Google user
+        # Migrate guest conversations, messages, memories, and documents to this Google user
         try:
-            guest_users = db.scalars(select(User).where(User.google_sub == "local_guest_offline_sub")).all()
+            guest_subs = ["local_guest_offline_sub", "guest_user", "local_legacy_user_sub"]
+            guest_users = db.scalars(select(User).where(User.google_sub.in_(guest_subs))).all()
             for g in guest_users:
                 if g.id != user.id:
                     db.query(Conversation).filter(Conversation.user_id == g.id).update({Conversation.user_id: user.id}, synchronize_session=False)
                     db.query(Message).filter(Message.user_id == g.id).update({Message.user_id: user.id}, synchronize_session=False)
+                    db.query(Memory).filter(Memory.user_id == g.id).update({Memory.user_id: user.id}, synchronize_session=False)
+                    db.query(Document).filter(Document.user_id == g.id).update({Document.user_id: user.id}, synchronize_session=False)
             db.commit()
         except Exception as e:
-            logger.warning(f"Notice during OAuth conversation migration: {e}")
+            logger.warning(f"Notice during OAuth data migration: {e}")
             db.rollback()
 
         raw_session_token = auth_service.create_session(db, user.id)
 
-        redirect = RedirectResponse(url="/", status_code=302)
+        redirect = RedirectResponse(url="/?auth_success=true", status_code=302)
         redirect.set_cookie(
             key=settings.SESSION_COOKIE_NAME,
             value=raw_session_token,
@@ -181,85 +184,14 @@ async def google_oauth_redirect_callback(
         return RedirectResponse(url=f"/?auth_error={urllib.parse.quote(str(e))}", status_code=302)
 
 
-class GoogleSignInPayload(BaseModel):
-    email: str
-    name: Optional[str] = None
-    picture: Optional[str] = None
-
-
 @router.post("/google/signin", response_model=SessionResponse)
-def signin_with_google_account(
-    payload: GoogleSignInPayload,
-    request: Request,
-    response: Response,
-    db: Session = Depends(get_db)
-):
+def signin_with_google_account():
     """
-    Signs in or registers with Google account details.
-    Establishes a persistent session cookie and saves user in PostgreSQL.
-    Seamlessly migrates any prior guest conversations to this Google user.
+    Disabled for security: users must authenticate via Google's official OAuth authorization website.
     """
-    clean_email = payload.email.strip().lower()
-    if not clean_email or "@" not in clean_email:
-        raise HTTPException(status_code=400, detail="A valid Google email address is required.")
-
-    display_name = payload.name.strip() if payload.name else clean_email.split("@")[0].capitalize()
-    
-    # Deterministic Google subject ID
-    sub_hash = hashlib.sha256(f"google_oauth_{clean_email}".encode()).hexdigest()[:24]
-    google_sub = f"10{int(sub_hash, 16) % 10**19}"
-
-    # Google/Gravatar styled avatar
-    gravatar_hash = hashlib.md5(clean_email.encode()).hexdigest()
-    avatar_url = payload.picture or f"https://www.gravatar.com/avatar/{gravatar_hash}?d=identicon&s=128"
-
-    user = auth_service.get_or_create_user(
-        db=db,
-        google_sub=google_sub,
-        email=clean_email,
-        display_name=display_name,
-        avatar_url=avatar_url
-    )
-
-    # Migrate any guest conversations and messages to this Google user so history is preserved
-    try:
-        prev_token = get_session_token_from_request(request)
-        prev_user = auth_service.authenticate_session(db, prev_token) if prev_token else None
-        guest_sub = "local_guest_offline_sub"
-        
-        target_ids = []
-        if prev_user and prev_user.google_sub == guest_sub and prev_user.id != user.id:
-            target_ids.append(prev_user.id)
-            
-        guest_users = db.scalars(select(User).where(User.google_sub == guest_sub)).all()
-        for g in guest_users:
-            if g.id != user.id and g.id not in target_ids:
-                target_ids.append(g.id)
-                
-        for gid in target_ids:
-            db.query(Conversation).filter(Conversation.user_id == gid).update({Conversation.user_id: user.id}, synchronize_session=False)
-            db.query(Message).filter(Message.user_id == gid).update({Message.user_id: user.id}, synchronize_session=False)
-        db.commit()
-    except Exception as e:
-        logger.warning(f"Notice during guest conversation migration: {e}")
-        db.rollback()
-
-    raw_session_token = auth_service.create_session(db, user.id)
-
-    response.set_cookie(
-        key=settings.SESSION_COOKIE_NAME,
-        value=raw_session_token,
-        max_age=settings.SESSION_MAX_AGE_SECONDS,
-        httponly=True,
-        samesite="lax",
-        secure=False,
-        path="/"
-    )
-
-    return SessionResponse(
-        authenticated=True,
-        user=UserProfileSchema.from_orm(user),
-        message=f"Signed in successfully as {display_name}."
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Direct email entry is disabled for security. Please authenticate via the 'Continue with Google' button."
     )
 
 
@@ -316,7 +248,7 @@ def get_current_profile(
     user: User | None = Depends(get_optional_user)
 ):
     """Checks the active session and returns user profile if logged in."""
-    if not user:
+    if not user or user.google_sub in ("local_guest_offline_sub", "guest_user", "local_legacy_user_sub"):
         return SessionResponse(authenticated=False, user=None)
     return SessionResponse(authenticated=True, user=UserProfileSchema.from_orm(user))
 
