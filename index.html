@@ -727,15 +727,17 @@
                 try {
                     const res = await fetch('/api/documents/upload', {
                         method: 'POST',
+                        credentials: 'include',
                         body: formData
                     });
                     if (res.ok) {
                         const data = await res.json();
-                        showBanner(`Indexed "${file.name}" (${data.total_chunks || 0} chunks ready for RAG)`);
+                        const count = data.document ? data.document.chunk_count : (data.total_chunks || 0);
+                        showBanner(`Indexed "${file.name}" (${count} chunks ready for RAG)`);
                         setTimeout(hideBanner, 4000);
                     } else {
-                        const err = await res.json();
-                        alert(`Upload failed: ${err.detail || 'Error'}`);
+                        const err = await res.json().catch(() => ({}));
+                        alert(`Upload failed: ${err.detail || res.statusText || 'Error'}`);
                         hideBanner();
                     }
                 } catch (e) {
@@ -752,10 +754,10 @@
             const container = document.getElementById('documentListContainer');
             container.innerHTML = '<div style="color:#9c95af;font-size:13px;">Loading documents...</div>';
             try {
-                const res = await fetch('/api/documents');
+                const res = await fetch('/api/documents', { credentials: 'include' });
                 if (res.ok) {
                     const docs = await res.json();
-                    if (docs.length === 0) {
+                    if (!docs || docs.length === 0) {
                         container.innerHTML = '<div style="color:#9c95af;font-size:13px;text-align:center;padding:1rem;">No documents uploaded yet.</div>';
                         return;
                     }
@@ -766,21 +768,24 @@
                         row.innerHTML = `
                             <div>
                                 <div style="font-weight:600;color:#49445c;">📄 ${escapeHtml(d.filename)}</div>
-                                <div style="font-size:11px;color:#9c95af;">${d.total_chunks} chunks • ${(d.file_size / 1024).toFixed(1)} KB • <span style="color:#10b981;font-weight:600;">${d.status}</span></div>
+                                <div style="font-size:11px;color:#9c95af;">${d.chunk_count || 0} chunks • ${((d.file_size || 0) / 1024).toFixed(1)} KB • <span style="color:#10b981;font-weight:600;">${escapeHtml(d.processing_status || 'ready')}</span></div>
                             </div>
-                            <button onclick="deleteDocument('${d.id}')" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:0.3rem;">🗑️</button>
+                            <button onclick="deleteDocument('${d.id}')" title="Delete document" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:0.3rem;">🗑️</button>
                         `;
                         container.appendChild(row);
                     });
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load documents (${res.status}): ${escapeHtml(err.detail || res.statusText)}</div>`;
                 }
             } catch (err) {
-                container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load documents: ${err.message}</div>`;
+                container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load documents: ${escapeHtml(err.message)}</div>`;
             }
         }
 
         async function deleteDocument(id) {
             if (confirm('Delete this document and all its indexed vector chunks?')) {
-                await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+                await fetch(`/api/documents/${id}`, { method: 'DELETE', credentials: 'include' });
                 loadDocuments();
             }
         }
@@ -802,51 +807,90 @@
             const container = document.getElementById('memoryListContainer');
             container.innerHTML = '<div style="color:#9c95af;font-size:13px;">Loading memories...</div>';
             try {
-                const res = await fetch('/api/memories');
+                const res = await fetch('/api/memories', { credentials: 'include' });
                 if (res.ok) {
                     const mems = await res.json();
-                    if (mems.length === 0) {
+                    if (!mems || mems.length === 0) {
                         container.innerHTML = '<div style="color:#9c95af;font-size:13px;text-align:center;padding:1rem;">No long-term memories recorded yet.</div>';
                         return;
                     }
                     container.innerHTML = '';
                     mems.forEach(m => {
+                        let displayKey = m.category || 'memory';
+                        let displayVal = m.memory_text || '';
+                        if (m.memory_text && m.memory_text.includes(': ')) {
+                            const parts = m.memory_text.split(': ');
+                            displayKey = parts[0];
+                            displayVal = parts.slice(1).join(': ');
+                        }
                         const row = document.createElement('div');
                         row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.6rem;background:#fbf9ff;border:1px solid #efe8f8;border-radius:0.75rem;font-size:12.5px;';
                         row.innerHTML = `
                             <div>
-                                <div style="font-weight:600;color:#67439d;"><span style="background:#eee7fa;padding:0.15rem 0.4rem;border-radius:0.4rem;font-size:10px;">${escapeHtml(m.category)}</span> ${escapeHtml(m.key)}</div>
-                                <div style="color:#554c68;margin-top:0.2rem;">${escapeHtml(m.value)}</div>
+                                <div style="font-weight:600;color:#67439d;"><span style="background:#eee7fa;padding:0.15rem 0.4rem;border-radius:0.4rem;font-size:10px;">${escapeHtml(m.category || 'project')}</span> ${escapeHtml(displayKey)}</div>
+                                <div style="color:#554c68;margin-top:0.2rem;">${escapeHtml(displayVal)}</div>
                             </div>
-                            <button onclick="deleteMemory('${m.id}')" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:0.3rem;">🗑️</button>
+                            <button onclick="deleteMemory('${m.id}')" title="Delete memory" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:0.3rem;">🗑️</button>
                         `;
                         container.appendChild(row);
                     });
+                } else {
+                    const err = await res.json().catch(() => ({}));
+                    container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load memories (${res.status}): ${escapeHtml(err.detail || res.statusText)}</div>`;
                 }
             } catch (err) {
-                container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load memories: ${err.message}</div>`;
+                container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load memories: ${escapeHtml(err.message)}</div>`;
             }
         }
 
         document.getElementById('btnAddMemory').onclick = async () => {
-            const key = document.getElementById('newMemoryKey').value.trim();
-            const val = document.getElementById('newMemoryVal').value.trim();
-            if (key && val) {
-                await fetch('/api/memories', {
+            const keyInput = document.getElementById('newMemoryKey');
+            const valInput = document.getElementById('newMemoryVal');
+            const key = keyInput.value.trim();
+            const val = valInput.value.trim();
+            if (!key && !val) {
+                alert('Please enter a key and value (e.g. key: name, value: Dharm)');
+                return;
+            }
+            try {
+                const res = await fetch('/api/memories', {
                     method: 'POST',
+                    credentials: 'include',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ key, value: val, category: 'project' })
+                    body: JSON.stringify({
+                        key: key,
+                        value: val,
+                        memory_text: key && val ? `${key}: ${val}` : (val || key),
+                        category: key || 'project'
+                    })
                 });
-                document.getElementById('newMemoryKey').value = '';
-                document.getElementById('newMemoryVal').value = '';
-                loadMemories();
+                if (!res.ok) {
+                    const err = await res.json().catch(() => ({}));
+                    alert('Could not save memory: ' + (err.detail || res.statusText || 'Server error'));
+                    return;
+                }
+                keyInput.value = '';
+                valInput.value = '';
+                await loadMemories();
+                showBanner(`✨ Saved memory: ${key ? key + ': ' : ''}${val}`);
+                setTimeout(hideBanner, 3000);
+            } catch (err) {
+                alert('Error saving memory: ' + err.message);
             }
         };
 
         async function deleteMemory(id) {
             if (confirm('Delete this saved memory?')) {
-                await fetch(`/api/memories/${id}`, { method: 'DELETE' });
-                loadMemories();
+                try {
+                    const res = await fetch(`/api/memories/${id}`, { method: 'DELETE', credentials: 'include' });
+                    if (!res.ok) {
+                        const err = await res.json().catch(() => ({}));
+                        alert('Could not delete memory: ' + (err.detail || res.statusText));
+                    }
+                    loadMemories();
+                } catch (e) {
+                    alert('Delete failed: ' + e.message);
+                }
             }
         }
 

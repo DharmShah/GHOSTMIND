@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
@@ -16,7 +16,9 @@ class MemorySchema(BaseModel):
         from_attributes = True
 
 class CreateMemoryRequest(BaseModel):
-    memory_text: str
+    memory_text: Optional[str] = None
+    key: Optional[str] = None
+    value: Optional[str] = None
     category: Optional[str] = "project_context"
     source_conversation_id: Optional[uuid.UUID] = None
 
