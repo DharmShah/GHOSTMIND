@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from core.database import get_db
+from core.user import get_local_user
 from models import User
-from routes.conversations import resolve_active_user
 from schemas.memory import MemorySchema, CreateMemoryRequest, UpdateMemoryRequest
 from services import memory_service
 
@@ -13,16 +13,16 @@ router = APIRouter(prefix="/api/memories", tags=["Personalized Memory"])
 
 @router.get("", response_model=List[MemorySchema])
 def list_user_memories(
-    current_user: User = Depends(resolve_active_user),
+    current_user: User = Depends(get_local_user),
     db: Session = Depends(get_db)
 ):
-    """Retrieves all saved long-term memories for the active user."""
+    """Retrieves all saved long-term memories for the local user."""
     return memory_service.list_memories_for_user(db=db, user_id=current_user.id)
 
 @router.post("", response_model=MemorySchema, status_code=status.HTTP_201_CREATED)
 def create_memory(
     payload: CreateMemoryRequest,
-    current_user: User = Depends(resolve_active_user),
+    current_user: User = Depends(get_local_user),
     db: Session = Depends(get_db)
 ):
     """Adds a manual long-term memory."""
@@ -55,7 +55,7 @@ def create_memory(
 def update_memory(
     memory_id: uuid.UUID,
     payload: UpdateMemoryRequest,
-    current_user: User = Depends(resolve_active_user),
+    current_user: User = Depends(get_local_user),
     db: Session = Depends(get_db)
 ):
     """Updates memory text or toggles active state."""
@@ -68,13 +68,13 @@ def update_memory(
         is_active=payload.is_active
     )
     if not mem:
-        raise HTTPException(status_code=404, detail="Memory not found or access denied.")
+        raise HTTPException(status_code=404, detail="Memory not found.")
     return mem
 
 @router.delete("/{memory_id}")
 def delete_memory(
     memory_id: uuid.UUID,
-    current_user: User = Depends(resolve_active_user),
+    current_user: User = Depends(get_local_user),
     db: Session = Depends(get_db)
 ):
     """Deletes a long-term memory permanently."""
@@ -84,5 +84,5 @@ def delete_memory(
         memory_id=memory_id
     )
     if not success:
-        raise HTTPException(status_code=404, detail="Memory not found or access denied.")
+        raise HTTPException(status_code=404, detail="Memory not found.")
     return {"message": "Memory deleted successfully."}

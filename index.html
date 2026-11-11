@@ -8,340 +8,570 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <div class="app-wrapper">
-        <div class="chat-card">
-            <!-- Left Sidebar -->
+    <div class="app-container">
+        <div class="workspace-frame">
+            <!-- Left Collapsible Sidebar -->
             <aside class="sidebar" id="appSidebar">
                 <div class="sidebar-header">
-                    <div class="sidebar-brand">
-                        <img src="app_icon.png" alt="GHOSTMIND Logo" class="brand-icon" style="width:32px;height:32px;object-fit:contain;">
-                        <div>
-                            <div class="sidebar-title">GHOSTMIND</div>
-                            <div style="font-size:11px;color:#9b92b0;">AI Operating System</div>
+                    <div class="brand-badge">
+                        <div class="brand-orb">
+                            <img src="app_icon.png" alt="GHOSTMIND Orb">
+                        </div>
+                        <div class="brand-meta">
+                            <h1>GHOSTMIND</h1>
+                            <span>AI OS • Local Brain</span>
                         </div>
                     </div>
+                    <button class="btn-sidebar-collapse" id="btnCollapseSidebar" title="Collapse Sidebar">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <polyline points="15 18 9 12 15 6"></polyline>
+                        </svg>
+                    </button>
                 </div>
 
-                <div class="sidebar-actions">
+                <div class="sidebar-top">
                     <button class="btn-new-chat" id="btnNewChat">
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-                        New Chat
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="12" y1="5" x2="12" y2="19"></line>
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                        </svg>
+                        New Conversation
                     </button>
-                    <div class="search-box">
-                        <svg class="search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                        <input type="text" class="search-input" id="conversationSearch" placeholder="Search conversations...">
+                    <div class="sidebar-search">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="11" cy="11" r="8"></circle>
+                            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        </svg>
+                        <input type="text" id="conversationSearch" placeholder="Search conversations...">
                     </div>
                 </div>
 
+                <!-- Conversation History List -->
                 <div class="conversation-list" id="conversationList">
-                    <!-- Populated dynamically via JavaScript -->
+                    <!-- Populated dynamically -->
                 </div>
 
+                <!-- Sidebar Tool Links -->
                 <div class="sidebar-nav">
-                    <button class="nav-link" id="btnOpenDocs">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                        Documents & RAG
+                    <button class="nav-item-btn" id="btnOpenDocs">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                            <polyline points="14 2 14 8 20 8"></polyline>
+                            <line x1="16" y1="13" x2="8" y2="13"></line>
+                            <line x1="16" y1="17" x2="8" y2="17"></line>
+                        </svg>
+                        <span>Documents &amp; RAG</span>
+                        <span class="nav-pill" id="navDocCount">0</span>
                     </button>
-                    <button class="nav-link" id="btnOpenMemories">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-                        Memory Bank
+
+                    <button class="nav-item-btn" id="btnOpenMemories">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a2 2 0 0 1-2 2H10a2 2 0 0 1-2-2v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7z"></path>
+                            <line x1="9" y1="21" x2="15" y2="21"></line>
+                        </svg>
+                        <span>Memory Bank</span>
+                        <span class="nav-pill" id="navMemCount">0</span>
                     </button>
-                    <button class="nav-link" id="btnOpenVoice">
-                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-                        Voice Settings
+
+                    <button class="nav-item-btn" id="btnOpenVoice">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                            <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                            <line x1="12" y1="19" x2="12" y2="23"></line>
+                            <line x1="8" y1="23" x2="16" y2="23"></line>
+                        </svg>
+                        <span>Voice Assistant</span>
+                    </button>
+
+                    <button class="nav-item-btn" id="btnOpenIntegrations">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                        <span>Connected Services</span>
+                        <span class="nav-pill" id="navIntegrationCount">0</span>
+                    </button>
+
+                    <button class="nav-item-btn" id="btnOpenSettings">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="3"></circle>
+                            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        </svg>
+                        <span>Workspace Settings</span>
                     </button>
                 </div>
 
-                <div class="sidebar-footer" id="sidebarFooter">
-                    <!-- Unauthenticated / Guest Mode -->
-                    <div id="unauthenticatedState" class="unauth-state">
-                        <button class="btn-sidebar-signin" id="btnSidebarSignIn" title="Sign in with your Google account">
-                            <svg class="google-icon" width="20" height="20" viewBox="0 0 24 24">
-                                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                            </svg>
-                            <div class="signin-btn-text">
-                                <span class="signin-main">Sign in with Google</span>
-                                <span class="signin-sub">Sync chats &amp; memory</span>
-                            </div>
-                        </button>
-                    </div>
-
-                    <!-- Authenticated State (Google Account Connected) -->
-                    <div id="authenticatedState" class="user-profile-badge" style="display:none;">
-                        <div class="avatar-wrapper">
-                            <img id="userAvatar" src="app_icon.png" alt="Google Avatar" class="user-avatar">
-                            <div class="google-badge-overlay" title="Connected with Google">
-                                <svg width="9" height="9" viewBox="0 0 24 24">
-                                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-                                </svg>
-                            </div>
+                <!-- Zero-Auth Local User Footer -->
+                <div class="sidebar-footer">
+                    <div class="local-profile-pill">
+                        <div class="local-avatar">GM</div>
+                        <div class="local-profile-info">
+                            <div class="local-profile-name">Local AI Workspace</div>
+                            <div class="local-profile-sub">Zero-Auth • Private</div>
                         </div>
-                        <div class="user-info">
-                            <div class="user-name-row">
-                                <span class="user-name" id="userNameDisplay">Google User</span>
-                                <span class="signed-in-pill">Google</span>
-                            </div>
-                            <div class="user-email" id="userEmailDisplay">user@gmail.com</div>
-                        </div>
-                        <button class="btn-logout" id="btnLogout" title="Sign Out of Google Account">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                        </button>
                     </div>
                 </div>
             </aside>
 
-            <!-- Main Chat Area -->
-            <main class="chat-main">
+            <!-- Main Conversational Workspace -->
+            <main class="chat-workspace">
                 <header class="chat-header">
                     <div class="header-left">
-                        <button class="btn-sidebar-toggle" id="btnToggleSidebar" title="Toggle Sidebar">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+                        <button class="btn-toggle-sidebar" id="btnToggleSidebar" title="Toggle Sidebar">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                                <line x1="3" y1="12" x2="21" y2="12"></line>
+                                <line x1="3" y1="6" x2="21" y2="6"></line>
+                                <line x1="3" y1="18" x2="21" y2="18"></line>
+                            </svg>
                         </button>
-                        <div>
-                            <div class="brand-title" id="chatHeaderTitle">New Conversation</div>
-                            <div class="brand-subtitle" id="chatHeaderSubtitle">Qwen 2.5 3B • Persistent RAG & Memory</div>
+                        <div class="header-title-box">
+                            <h2 id="chatHeaderTitle">New Conversation</h2>
+                            <span id="chatHeaderSubtitle">Qwen 2.5 3B • DuckDuckGo Search • Local RAG</span>
                         </div>
                     </div>
-                    <div class="status-pill" id="statusPill">
-                        <span class="status-dot" id="statusDot"></span>
-                        <span id="statusText">Checking system...</span>
+
+                    <div class="header-right">
+                        <div class="status-chip" id="networkStatusChip" title="Internet Search Status">
+                            <span class="status-indicator-dot" id="networkDot"></span>
+                            <span id="networkText">Checking internet...</span>
+                        </div>
+                        <div class="status-chip" id="modelStatusChip" title="Local Model Status">
+                            <span class="status-indicator-dot" id="modelDot"></span>
+                            <span id="modelText">Ollama</span>
+                        </div>
+                        <button class="header-action-btn" id="btnHeaderSettings" title="Workspace Settings">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="3"></circle>
+                                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                            </svg>
+                        </button>
                     </div>
                 </header>
 
-                <div id="actionStatusBanner" style="display:none;padding:0.4rem 1rem;background:#efe8fa;color:#67439d;font-size:12px;align-items:center;justify-content:space-between;">
-                    <span id="actionStatusMessage">Processing...</span>
-                    <button onclick="this.parentElement.style.display='none'" style="background:none;border:none;cursor:pointer;color:#67439d;font-weight:bold;">&times;</button>
+                <!-- Live Status Banner -->
+                <div class="live-banner" id="liveBanner">
+                    <span id="liveBannerText">Searching DuckDuckGo for real-time information...</span>
+                    <button onclick="hideLiveBanner()" style="background:none;border:none;cursor:pointer;color:inherit;font-size:16px;">&times;</button>
                 </div>
 
-                <section class="chat-scroll" id="chatMessages">
-                    <!-- Welcome Box -->
-                    <div class="welcome-box" id="welcomeBox">
-                        <div class="welcome-cloud">
-                            <img src="app_icon.png" alt="GHOSTMIND Icon" style="width:48px;height:48px;object-fit:contain;">
+                <!-- Chat Messages Scroll Area -->
+                <div class="messages-container" id="messagesContainer">
+                    <!-- Welcome Hero (Displayed when conversation is empty) -->
+                    <div class="welcome-hero" id="welcomeHero">
+                        <div class="welcome-logo-badge">
+                            <img src="app_icon.png" alt="GHOSTMIND Orb">
                         </div>
-                        <h2 class="welcome-title">What can I help you accomplish today?</h2>
-                        <p class="welcome-sub">Your autonomous AI operating system running locally on your hardware with long-term memory and document intelligence.</p>
-                        <div class="suggestions-wrap">
-                            <div class="suggestion" onclick="usePrompt('Summarize our recent project context and tell me what you remember.')">
-                                🧠 <strong>Test Memory:</strong> What do you remember about my project?
+                        <h2 class="welcome-title">How can I assist your workflow today?</h2>
+                        <p class="welcome-sub">
+                            GHOSTMIND runs 100% locally on Qwen 2.5 3B with persistent PostgreSQL memory, local document RAG, and intelligent real-time web search.
+                        </p>
+                        <div class="suggestion-cards">
+                            <div class="suggest-card" onclick="usePrompt('What is Model Context Protocol (MCP) in Claude?')">
+                                <div class="suggest-card-header">
+                                    <span>🌐</span>
+                                    <span>Real-Time Web Intelligence</span>
+                                </div>
+                                <div class="suggest-card-sub">What is Model Context Protocol (MCP) in Claude?</div>
                             </div>
-                            <div class="suggestion" onclick="usePrompt('Upload a PDF or document and ask questions about its content.')">
-                                📂 <strong>Document RAG:</strong> Ask questions about uploaded files
+
+                            <div class="suggest-card" onclick="usePrompt('Explain Python asyncio queues and write a clean producer-consumer example with error handling.')">
+                                <div class="suggest-card-header">
+                                    <span>⚡</span>
+                                    <span>Direct Local Code Generation</span>
+                                </div>
+                                <div class="suggest-card-sub">Explain Python asyncio producer-consumer pattern</div>
                             </div>
-                            <div class="suggestion" onclick="usePrompt('Draft a concise project plan for our next milestone.')">
-                                📝 <strong>Planning:</strong> Draft a project milestone plan
+
+                            <div class="suggest-card" onclick="usePrompt('What do you remember about my project preferences and technical requirements?')">
+                                <div class="suggest-card-header">
+                                    <span>🧠</span>
+                                    <span>Memory Bank Context</span>
+                                </div>
+                                <div class="suggest-card-sub">What do you remember about my preferences?</div>
+                            </div>
+
+                            <div class="suggest-card" onclick="usePrompt('Summarize key points from my uploaded documents.')">
+                                <div class="suggest-card-header">
+                                    <span>📚</span>
+                                    <span>Document Intelligence &amp; RAG</span>
+                                </div>
+                                <div class="suggest-card-sub">Query indexed documents for architectural decisions</div>
                             </div>
                         </div>
                     </div>
-                </section>
+                </div>
 
-                <div class="chat-footer">
-                    <div class="input-container">
+                <!-- Floating Stop Generation Button (during streaming) -->
+                <div class="floating-stop-wrap" id="stopStreamWrap" style="display:none;">
+                    <button class="btn-stop-stream" id="btnStopStream">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                            <rect x="6" y="6" width="12" height="12" rx="2"></rect>
+                        </svg>
+                        <span>Stop Generation</span>
+                    </button>
+                </div>
+
+                <!-- Chat Input Command Bar -->
+                <footer class="chat-footer">
+                    <div class="input-shell">
                         <input type="file" id="fileUploadInput" multiple accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.json" style="display:none;">
-                        <button class="input-btn" id="btnAttachFile" title="Attach Document (PDF, DOCX, TXT, MD, CSV, XLSX, JSON)">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>
+                        <button class="input-action-btn" id="btnAttachFile" title="Attach Document (PDF, DOCX, TXT, MD, CSV, XLSX, JSON)">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                            </svg>
                         </button>
-                        <button class="input-btn" id="btnVoiceRecord" title="Click to Speak (Local Whisper Transcription)">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+                        <button class="input-action-btn" id="btnVoiceRecord" title="Click to Speak (Local Whisper Transcription)">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
+                                <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
+                                <line x1="12" y1="19" x2="12" y2="23"></line>
+                                <line x1="8" y1="23" x2="16" y2="23"></line>
+                            </svg>
                         </button>
-                        <textarea class="user-textarea" id="messageInput" rows="1" placeholder="Ask GHOSTMIND anything, or speak / attach files..."></textarea>
-                        <button class="send-button" id="sendButton" title="Send Message">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+
+                        <textarea class="chat-textarea" id="messageInput" rows="1" placeholder="Ask GHOSTMIND anything, or attach files / speak..."></textarea>
+
+                        <button class="btn-send" id="btnSend" title="Send Message (Enter)">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                                <line x1="22" y1="2" x2="11" y2="13"></line>
+                                <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                            </svg>
                         </button>
                     </div>
-                    <div class="footer-caption">
-                        100% Local Inference (Ollama & Faster-Whisper) • PostgreSQL Storage & RAG • Privacy Preserved
+
+                    <div class="footer-caption-row">
+                        <span>100% Local Inference • Zero External Cloud API • Privacy Preserved</span>
+                        <label class="toggle-pill-switch" title="Toggle automatic DuckDuckGo web search">
+                            <input type="checkbox" id="inputWebSearchToggle" checked>
+                            <span class="toggle-slider"></span>
+                            <span>Web Search</span>
+                        </label>
                     </div>
-                </div>
+                </footer>
             </main>
         </div>
     </div>
 
-    <!-- Document Library Modal -->
-    <div class="modal-overlay" id="modalDocuments" style="display:none;">
-        <div class="modal-card">
+    <!-- =====================================================================
+         Modals
+         ===================================================================== -->
+
+    <!-- Documents & RAG Modal -->
+    <div class="modal-overlay" id="modalDocuments">
+        <div class="modal-window">
             <div class="modal-header">
-                <div class="modal-title">📂 Document Library & RAG</div>
-                <button class="modal-close" onclick="closeModal('modalDocuments')">&times;</button>
+                <h3>📂 Document Library &amp; Vector RAG</h3>
+                <button class="btn-close-modal" onclick="closeModal('modalDocuments')">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="docDropZone" style="border:2px dashed #d8cde9;border-radius:1rem;padding:1.5rem;text-align:center;background:#faf7ff;cursor:pointer;margin-bottom:1rem;">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#8a73b0" stroke-width="1.8" style="margin-bottom:0.5rem;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
-                    <div style="font-weight:600;color:#554c68;">Click or drag & drop files here to upload</div>
-                    <div style="font-size:12px;color:#9b92af;margin-top:0.25rem;">Supports PDF, DOCX, TXT, MD, CSV, XLSX, JSON (Max 50MB)</div>
+                <div id="docDropZone" style="border:2px dashed var(--lavender-300);border-radius:var(--radius-lg);padding:1.4rem;text-align:center;background:var(--lavender-50);cursor:pointer;margin-bottom:1rem;transition:var(--transition-fast);">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--lavender-500)" stroke-width="1.8" style="margin-bottom:0.4rem;">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                        <polyline points="17 8 12 3 7 8"></polyline>
+                        <line x1="12" y1="3" x2="12" y2="15"></line>
+                    </svg>
+                    <div style="font-weight:700;color:var(--text-primary);font-size:0.9rem;">Drop documents here or click to browse</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);margin-top:0.2rem;">PDF, DOCX, TXT, MD, CSV, XLSX, JSON (Chunked &amp; indexed locally into pgvector)</div>
                 </div>
-                <div style="font-weight:600;font-size:0.875rem;color:#49445c;margin-bottom:0.5rem;">Indexed Documents</div>
-                <div id="documentListContainer" style="display:flex;flex-direction:column;gap:0.5rem;">
-                    <div style="color:#9c95af;font-size:13px;">Loading documents...</div>
+
+                <div style="font-weight:700;font-size:0.86rem;color:var(--text-primary);margin-bottom:8px;">Indexed Knowledge Base</div>
+                <div id="documentListContainer" style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="color:var(--text-muted);font-size:0.82rem;">Loading documents...</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Long-term Memories Modal -->
-    <div class="modal-overlay" id="modalMemories" style="display:none;">
-        <div class="modal-card">
+    <!-- Memory Bank Modal -->
+    <div class="modal-overlay" id="modalMemories">
+        <div class="modal-window">
             <div class="modal-header">
-                <div class="modal-title">🧠 Personalized Long-term Memory</div>
-                <button class="modal-close" onclick="closeModal('modalMemories')">&times;</button>
+                <h3>🧠 Personalized Long-term Memory</h3>
+                <button class="btn-close-modal" onclick="closeModal('modalMemories')">&times;</button>
             </div>
             <div class="modal-body">
-                <p style="font-size:12.5px;color:#78718a;margin-bottom:1rem;">
-                    GHOSTMIND automatically remembers key facts, preferences, and project settings across conversations.
+                <p style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px;">
+                    GHOSTMIND remembers key facts and preferences across conversations, dynamically filtered during context assembly to minimize token consumption.
                 </p>
-                <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
-                    <input type="text" id="newMemoryKey" placeholder="Key (e.g. project_name)" style="flex:1;padding:0.45rem 0.65rem;border-radius:0.5rem;border:1px solid #dfd8ed;font-size:12px;">
-                    <input type="text" id="newMemoryVal" placeholder="Value (e.g. GHOSTMIND AI OS)" style="flex:2;padding:0.45rem 0.65rem;border-radius:0.5rem;border:1px solid #dfd8ed;font-size:12px;">
-                    <button id="btnAddMemory" style="padding:0.45rem 0.85rem;background:#cbb9f5;color:#fff;border:none;border-radius:0.5rem;font-size:12px;font-weight:600;cursor:pointer;">Add</button>
+                <div style="display:flex;gap:8px;margin-bottom:14px;">
+                    <input type="text" id="inputMemKey" placeholder="Key (e.g. project_name)" style="flex:1;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;outline:none;">
+                    <input type="text" id="inputMemVal" placeholder="Value (e.g. GHOSTMIND OS)" style="flex:2;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;outline:none;">
+                    <button id="btnSaveMemory" style="padding:8px 16px;background:var(--lavender-500);color:#ffffff;border:none;border-radius:var(--radius-md);font-weight:600;font-size:0.82rem;cursor:pointer;">Add</button>
                 </div>
-                <div id="memoryListContainer" style="display:flex;flex-direction:column;gap:0.5rem;">
-                    <div style="color:#9c95af;font-size:13px;">Loading memories...</div>
+                <div id="memoryListContainer" style="display:flex;flex-direction:column;gap:8px;">
+                    <div style="color:var(--text-muted);font-size:0.82rem;">Loading memories...</div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Voice Settings Modal -->
-    <div class="modal-overlay" id="modalVoice" style="display:none;">
-        <div class="modal-card">
+    <!-- Voice Assistant Modal -->
+    <div class="modal-overlay" id="modalVoice">
+        <div class="modal-window">
             <div class="modal-header">
-                <div class="modal-title">🎙️ Local Whisper Speech Recognition</div>
-                <button class="modal-close" onclick="closeModal('modalVoice')">&times;</button>
+                <h3>🎙️ Local Whisper Speech Recognition</h3>
+                <button class="btn-close-modal" onclick="closeModal('modalVoice')">&times;</button>
             </div>
             <div class="modal-body">
-                <div id="voiceDiagnosticContent" style="font-size:13px;line-height:1.6;color:#524c63;">
-                    <p><strong>Whisper Engine:</strong> faster-whisper (Local CPU int8)</p>
-                    <p><strong>Configured Model:</strong> tiny (fast, lightweight)</p>
-                    <p><strong>Privacy:</strong> 100% Offline (No audio leaves this machine)</p>
-                    <div style="margin-top:1rem;padding:0.75rem;background:#f8f5fd;border-radius:0.75rem;">
-                        <strong>Microphone Usage:</strong><br>
-                        Click the microphone button, grant browser audio permission, speak, and click it again to transcribe. Your transcribed speech will appear directly in the message box.
+                <div style="line-height:1.6;font-size:0.85rem;">
+                    <p><strong>Speech Engine:</strong> faster-whisper (Local CPU int8 quantization)</p>
+                    <p><strong>Model Size:</strong> base / tiny (configurable)</p>
+                    <p><strong>Privacy:</strong> 100% Offline (No audio leaves this computer)</p>
+                    <div style="margin-top:12px;padding:12px;background:var(--lavender-50);border-radius:var(--radius-md);border:1px solid var(--lavender-200);">
+                        <strong>Quick Instructions:</strong><br>
+                        Click the microphone icon in the chat bar, speak your prompt clearly, and click it again. The local speech transcription will instantly appear in your message box.
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Google Sign-In Modal -->
-    <div class="modal-overlay" id="modalAuth" style="display:none;">
-        <div class="modal-card" style="max-width:26rem;text-align:center;">
-            <div class="modal-header" style="justify-content:space-between;border-bottom:none;padding:1.25rem 1.25rem 0.5rem;">
-                <div style="width:24px;"></div>
-                <img src="app_icon.png" alt="GHOSTMIND Logo" style="width:56px;height:56px;object-fit:contain;">
-                <button class="modal-close" onclick="closeModal('modalAuth')">&times;</button>
+    <!-- Workspace Settings Modal -->
+    <div class="modal-overlay" id="modalSettings">
+        <div class="modal-window">
+            <div class="modal-header">
+                <h3>⚙️ Workspace &amp; Token Optimization Settings</h3>
+                <button class="btn-close-modal" onclick="closeModal('modalSettings')">&times;</button>
             </div>
-            <div class="modal-body" style="padding:0 1.5rem 1.5rem;">
-                <h2 style="font-size:1.35rem;font-weight:700;color:#383248;margin-bottom:0.25rem;">Sign In with Google</h2>
-                <div style="font-size:12.5px;color:#8f86a2;margin-bottom:1.25rem;">Sign in to sync your conversation history, document intelligence &amp; long-term memories in PostgreSQL</div>
+            <div class="modal-body">
+                <div class="setting-row">
+                    <div class="setting-label-row">
+                        <span class="setting-label">Local Model</span>
+                        <span class="setting-val-badge" id="settingModelBadge">qwen2.5:3b</span>
+                    </div>
+                    <div class="setting-desc">Optimized for Windows 10/11 CPU execution without dedicated GPU.</div>
+                </div>
 
-                <!-- Official Google OAuth 2.0 Action -->
-                <div style="display:flex;flex-direction:column;gap:1rem;margin-top:0.75rem;">
-                    <button type="button" id="btnContinueWithGoogle" onclick="startGoogleOAuth()" class="btn-google-action" style="width:100%;padding:0.75rem 1rem;font-size:14px;box-shadow:0 2px 8px rgba(66,133,244,0.15);">
-                        <svg width="22" height="22" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                        <span>Continue with Google</span>
+                <div class="setting-row">
+                    <div class="setting-label-row">
+                        <span class="setting-label">Temperature</span>
+                        <span class="setting-val-badge" id="valTemperature">0.7</span>
+                    </div>
+                    <div class="setting-desc">Lower values are factual and concise; higher values are creative. Default is 0.7.</div>
+                    <input type="range" class="setting-slider" id="sliderTemperature" min="0" max="1" step="0.05" value="0.7">
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-label-row">
+                        <span class="setting-label">Max Output Tokens</span>
+                        <span class="setting-val-badge" id="valMaxTokens">1024</span>
+                    </div>
+                    <div class="setting-desc">Limits token generation per turn to maintain rapid CPU response times.</div>
+                    <input type="range" class="setting-slider" id="sliderMaxTokens" min="256" max="2048" step="128" value="1024">
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-label-row">
+                        <span class="setting-label">Intelligent Web Search</span>
+                        <label class="toggle-pill-switch">
+                            <input type="checkbox" id="settingWebSearchToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-desc">Automatically routes queries requiring real-time facts or modern 2024+ tools through DuckDuckGo.</div>
+                </div>
+
+                <div class="setting-row">
+                    <div class="setting-label-row">
+                        <span class="setting-label">Vector RAG Retrieval</span>
+                        <label class="toggle-pill-switch">
+                            <input type="checkbox" id="settingRagToggle" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="setting-desc">Retrieves top-3 relevant document chunks using cosine similarity threshold 0.45.</div>
+                </div>
+
+                <div class="setting-row" style="margin-top:20px;padding-top:14px;border-top:1px solid var(--border-subtle);">
+                    <div style="font-weight:700;font-size:0.86rem;margin-bottom:8px;">System Diagnostics</div>
+                    <div id="diagnosticsSummary" style="font-size:0.78rem;color:var(--text-secondary);line-height:1.6;">
+                        Checking services...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MCP & Connected Services Modal -->
+    <div class="modal-overlay" id="modalIntegrations">
+        <div class="modal-window" style="max-width: 680px;">
+            <div class="modal-header">
+                <h3>⚡ Connected Services &amp; MCP Ecosystem</h3>
+                <button class="btn-close-modal" onclick="closeModal('modalIntegrations')">&times;</button>
+            </div>
+            <div class="modal-body">
+                <!-- Navigation Tabs -->
+                <div class="modal-tabs-header">
+                    <button class="modal-tab-btn active" id="tabBtnActiveIntegrations" onclick="switchIntegrationsTab('active')">
+                        Active Services (<span id="modalActiveIntegrationsCount">0</span>)
                     </button>
-                    <div style="font-size:11.5px;color:#9b92ae;line-height:1.4;">
-                        🔒 Securely authenticates with Google Accounts. Your credentials are never seen or stored by GHOSTMIND.
+                    <button class="modal-tab-btn" id="tabBtnCatalogIntegrations" onclick="switchIntegrationsTab('catalog')">
+                        Browse MCP Catalog
+                    </button>
+                    <button class="modal-tab-btn" id="tabBtnCustomIntegrations" onclick="switchIntegrationsTab('custom')">
+                        + Custom MCP Server
+                    </button>
+                </div>
+
+                <!-- Tab 1: Active Services -->
+                <div id="tabContentActiveIntegrations">
+                    <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px;">
+                        Manage your connected applications and tools. GHOSTMIND communicates with tools directly over standard Model Context Protocol (MCP).
+                    </div>
+                    <div class="service-card-list" id="activeServicesContainer">
+                        <div style="color:var(--text-muted);font-size:0.82rem;">Loading integrations...</div>
                     </div>
                 </div>
 
-                <div style="margin:1rem 0;display:flex;align-items:center;gap:0.5rem;font-size:11px;color:#bbb;">
-                    <div style="flex:1;height:1px;background:#eee;"></div>
-                    <span>OR</span>
-                    <div style="flex:1;height:1px;background:#eee;"></div>
+                <!-- Tab 2: Browse Catalog -->
+                <div id="tabContentCatalogIntegrations" style="display:none;">
+                    <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px;">
+                        Connect official and verified Model Context Protocol (MCP) integrations with one click.
+                    </div>
+                    <div class="service-card-list" id="catalogServicesContainer">
+                        <div style="color:var(--text-muted);font-size:0.82rem;">Loading catalog...</div>
+                    </div>
                 </div>
 
-                <button id="btnContinueGuest" onclick="closeModal('modalAuth')" style="width:100%;padding:0.6rem;border-radius:0.75rem;border:1px solid #dfd8ec;background:#faf8fe;font-size:13px;color:#675883;font-weight:500;cursor:pointer;">
-                    Continue as Offline Guest
-                </button>
+                <!-- Tab 3: Custom MCP Server Form -->
+                <div id="tabContentCustomIntegrations" style="display:none;">
+                    <div style="font-size:0.82rem;color:var(--text-secondary);margin-bottom:12px;">
+                        Register any custom Model Context Protocol server via <code>stdio</code> command or remote <code>Streamable HTTP / SSE</code> endpoint.
+                    </div>
+                    <form id="formCustomServer" onsubmit="handleCustomServerSubmit(event)" style="display:flex;flex-direction:column;gap:10px;">
+                        <div>
+                            <label style="font-size:0.78rem;font-weight:700;color:var(--text-primary);display:block;margin-bottom:4px;">Server Identifier (Lowercase)</label>
+                            <input type="text" id="customServerName" required placeholder="e.g. my-sqlite-mcp" style="width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.78rem;font-weight:700;color:var(--text-primary);display:block;margin-bottom:4px;">Display Name</label>
+                            <input type="text" id="customServerDisplayName" required placeholder="e.g. My SQLite MCP Server" style="width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.78rem;font-weight:700;color:var(--text-primary);display:block;margin-bottom:4px;">Transport</label>
+                            <select id="customServerTransport" onchange="toggleCustomTransportFields()" style="width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;background:var(--surface-bg);">
+                                <option value="stdio">stdio (Local Subprocess)</option>
+                                <option value="sse">Streamable HTTP / SSE (Remote)</option>
+                            </select>
+                        </div>
+                        <div id="stdioFields">
+                            <label style="font-size:0.78rem;font-weight:700;color:var(--text-primary);display:block;margin-bottom:4px;">Command (e.g. npx, uvx, python)</label>
+                            <input type="text" id="customServerCommand" placeholder="npx" style="width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;margin-bottom:8px;">
+                            <label style="font-size:0.78rem;font-weight:700;color:var(--text-primary);display:block;margin-bottom:4px;">Arguments (Space-separated)</label>
+                            <input type="text" id="customServerArgs" placeholder="-y @modelcontextprotocol/server-sqlite --db-path ./test.db" style="width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;">
+                        </div>
+                        <div id="sseFields" style="display:none;">
+                            <label style="font-size:0.78rem;font-weight:700;color:var(--text-primary);display:block;margin-bottom:4px;">Endpoint URL</label>
+                            <input type="url" id="customServerUrl" placeholder="https://mcp.example.com/sse" style="width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;">
+                        </div>
+                        <div>
+                            <label style="font-size:0.78rem;font-weight:700;color:var(--text-primary);display:block;margin-bottom:4px;">Environment Variables (JSON format, optional)</label>
+                            <textarea id="customServerEnv" rows="2" placeholder='{"API_KEY": "secret_token_here"}' style="width:100%;padding:8px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);font-size:0.82rem;font-family:var(--font-mono);"></textarea>
+                        </div>
+                        <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:6px;">
+                            <button type="submit" id="btnRegisterCustomServer" style="padding:8px 18px;background:linear-gradient(135deg, var(--lavender-500), var(--blue-500));color:#fff;border:none;border-radius:var(--radius-md);font-weight:600;font-size:0.83rem;cursor:pointer;">Connect Server</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- Client-side Logic -->
+    <!-- Client-side Logic (SSE Streaming, Markdown Highlighting, Zero Auth) -->
     <script>
-        let currentUser = null;
+        // State variables
         let activeConversationId = null;
         let conversations = [];
-        let isGenerating = false;
+        let isStreaming = false;
+        let currentAbortController = null;
+        let lastUserMessage = "";
+        let isRecording = false;
         let mediaRecorder = null;
         let audioChunks = [];
-        let isRecording = false;
 
-        const chatMessages = document.getElementById('chatMessages');
-        const welcomeBox = document.getElementById('welcomeBox');
-        const messageInput = document.getElementById('messageInput');
-        const sendButton = document.getElementById('sendButton');
+        // Workspace settings (persisted in localStorage)
+        let workspaceSettings = {
+            temperature: parseFloat(localStorage.getItem('gm_temp') || '0.7'),
+            maxOutputTokens: parseInt(localStorage.getItem('gm_max_tokens') || '1024'),
+            enableWebSearch: localStorage.getItem('gm_web_search') !== 'false',
+            enableRag: localStorage.getItem('gm_rag') !== 'false'
+        };
+
+        // DOM elements
+        const appSidebar = document.getElementById('appSidebar');
+        const btnToggleSidebar = document.getElementById('btnToggleSidebar');
+        const btnCollapseSidebar = document.getElementById('btnCollapseSidebar');
+        const btnNewChat = document.getElementById('btnNewChat');
         const conversationList = document.getElementById('conversationList');
         const conversationSearch = document.getElementById('conversationSearch');
+        const messagesContainer = document.getElementById('messagesContainer');
+        const welcomeHero = document.getElementById('welcomeHero');
+        const messageInput = document.getElementById('messageInput');
+        const btnSend = document.getElementById('btnSend');
         const chatHeaderTitle = document.getElementById('chatHeaderTitle');
-        const statusPill = document.getElementById('statusPill');
-        const statusDot = document.getElementById('statusDot');
-        const statusText = document.getElementById('statusText');
-        const btnNewChat = document.getElementById('btnNewChat');
+        const chatHeaderSubtitle = document.getElementById('chatHeaderSubtitle');
+        const networkStatusChip = document.getElementById('networkStatusChip');
+        const networkDot = document.getElementById('networkDot');
+        const networkText = document.getElementById('networkText');
+        const modelDot = document.getElementById('modelDot');
+        const modelText = document.getElementById('modelText');
+        const liveBanner = document.getElementById('liveBanner');
+        const liveBannerText = document.getElementById('liveBannerText');
+        const stopStreamWrap = document.getElementById('stopStreamWrap');
+        const btnStopStream = document.getElementById('btnStopStream');
         const btnAttachFile = document.getElementById('btnAttachFile');
         const fileUploadInput = document.getElementById('fileUploadInput');
         const btnVoiceRecord = document.getElementById('btnVoiceRecord');
-        const unauthenticatedState = document.getElementById('unauthenticatedState');
-        const authenticatedState = document.getElementById('authenticatedState');
-        const btnSidebarSignIn = document.getElementById('btnSidebarSignIn');
-        const btnLogout = document.getElementById('btnLogout');
-        const userAvatar = document.getElementById('userAvatar');
-        const userNameDisplay = document.getElementById('userNameDisplay');
-        const userEmailDisplay = document.getElementById('userEmailDisplay');
-        const actionStatusBanner = document.getElementById('actionStatusBanner');
-        const actionStatusMessage = document.getElementById('actionStatusMessage');
+        const inputWebSearchToggle = document.getElementById('inputWebSearchToggle');
 
-        function escapeHtml(str) {
-            if (!str) return '';
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        // Modal triggers
+        document.getElementById('btnOpenDocs').onclick = () => { loadDocuments(); openModal('modalDocuments'); };
+        document.getElementById('btnOpenMemories').onclick = () => { loadMemories(); openModal('modalMemories'); };
+        document.getElementById('btnOpenVoice').onclick = () => openModal('modalVoice');
+        const btnOpenIntegrations = document.getElementById('btnOpenIntegrations');
+        if (btnOpenIntegrations) {
+            btnOpenIntegrations.onclick = () => {
+                openModal('modalIntegrations');
+                switchIntegrationsTab('active');
+            };
         }
+        document.getElementById('btnOpenSettings').onclick = () => { syncSettingsUI(); openModal('modalSettings'); };
+        document.getElementById('btnHeaderSettings').onclick = () => { syncSettingsUI(); openModal('modalSettings'); };
 
         function openModal(id) {
             const el = document.getElementById(id);
-            if (el) el.style.display = 'flex';
-            if (id === 'modalAuth') {
-                const savedEmail = localStorage.getItem('ghostmind_user_email') || '';
-                const savedName = localStorage.getItem('ghostmind_user_name') || '';
-                const emailInput = document.getElementById('inputGoogleEmail');
-                const nameInput = document.getElementById('inputGoogleName');
-                if (emailInput && !emailInput.value && savedEmail) emailInput.value = savedEmail;
-                if (nameInput && !nameInput.value && savedName) nameInput.value = savedName;
-                if (emailInput) setTimeout(() => emailInput.focus(), 80);
-            }
+            if (el) el.classList.add('active');
         }
         function closeModal(id) {
             const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
+            if (el) el.classList.remove('active');
         }
 
-        document.getElementById('btnOpenDocs').onclick = () => { loadDocuments(); openModal('modalDocuments'); };
-        document.getElementById('btnOpenMemories').onclick = () => { loadMemories(); openModal('modalMemories'); };
-        document.getElementById('btnOpenVoice').onclick = () => { openModal('modalVoice'); };
+        // Close modal on background click
+        document.querySelectorAll('.modal-overlay').forEach(overlay => {
+            overlay.addEventListener('click', (e) => {
+                if (e.target === overlay) overlay.classList.remove('active');
+            });
+        });
 
-        function showBanner(msg) {
-            actionStatusMessage.textContent = msg;
-            actionStatusBanner.style.display = 'flex';
+        function showLiveBanner(text) {
+            liveBannerText.textContent = text;
+            liveBanner.classList.add('active');
         }
-        function hideBanner() { actionStatusBanner.style.display = 'none'; }
-
-        function usePrompt(text) {
-            messageInput.value = text;
-            messageInput.focus();
-            autoResizeTextarea();
+        function hideLiveBanner() {
+            liveBanner.classList.remove('active');
         }
 
-        messageInput.addEventListener('input', autoResizeTextarea);
-        function autoResizeTextarea() {
+        // Sidebar collapse/expand
+        btnToggleSidebar.onclick = () => appSidebar.classList.toggle('collapsed');
+        btnCollapseSidebar.onclick = () => appSidebar.classList.add('collapsed');
+
+        // Auto resize textarea
+        messageInput.addEventListener('input', () => {
             messageInput.style.height = 'auto';
             messageInput.style.height = Math.min(messageInput.scrollHeight, 130) + 'px';
-        }
+        });
 
         messageInput.addEventListener('keydown', (e) => {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -349,149 +579,123 @@
                 sendMessage();
             }
         });
-        sendButton.addEventListener('click', sendMessage);
+        btnSend.onclick = sendMessage;
+        btnStopStream.onclick = stopGeneration;
 
-        document.getElementById('btnToggleSidebar').addEventListener('click', () => {
-            document.getElementById('appSidebar').classList.toggle('open');
-        });
+        function usePrompt(text) {
+            messageInput.value = text;
+            messageInput.focus();
+            messageInput.dispatchEvent(new Event('input'));
+        }
 
+        // 1. Initial Page Load
         window.addEventListener('DOMContentLoaded', async () => {
+            syncSettingsUI();
+            checkOAuthRedirect();
             await checkSystemStatus();
-            await checkAuth();
             await loadConversations();
+            await updateBadgeCounts();
         });
 
-        // 1. Status Check
+        // 2. System Status Check
         async function checkSystemStatus() {
             try {
                 const res = await fetch('/api/status');
                 const data = await res.json();
-                if (data.status === 'ready' || data.ollama_running) {
-                    statusDot.className = 'status-dot';
-                    statusText.textContent = `Online (${data.model_name || 'Qwen 2.5 3B'})`;
+
+                // Ollama status
+                if (data.ready || (data.ollama_running && data.model_installed)) {
+                    modelDot.className = 'status-indicator-dot';
+                    modelText.textContent = `Online (${data.model_name || 'qwen2.5:3b'})`;
+                } else if (data.ollama_running && !data.model_installed) {
+                    modelDot.className = 'status-indicator-dot warning';
+                    modelText.textContent = `Missing ${data.model_name || 'qwen2.5:3b'}`;
                 } else {
-                    statusDot.className = 'status-dot';
-                    statusDot.style.background = '#eab308';
-                    statusText.textContent = 'Ollama warming up...';
-                }
-            } catch (err) {
-                statusDot.className = 'status-dot';
-                statusDot.style.background = '#ef4444';
-                statusText.textContent = 'Connecting...';
-            }
-        }
-
-        // 2. Authentication Flow
-        async function checkAuth() {
-            try {
-                // Check public OAuth configuration
-                try {
-                    const cfgRes = await fetch('/api/auth/config');
-                    if (cfgRes.ok) {
-                        const cfg = await cfgRes.json();
-                        const oauthSection = document.getElementById('googleOAuthSection');
-                        if (oauthSection && cfg.google_auth_configured) {
-                            oauthSection.style.display = 'block';
-                        }
-                    }
-                } catch (e) {
-                    console.warn('OAuth config notice:', e);
+                    modelDot.className = 'status-indicator-dot warning';
+                    modelText.textContent = 'Ollama starting...';
+                    setTimeout(checkSystemStatus, 3000);
                 }
 
-                // Check active session
-                const res = await fetch('/api/auth/me', { credentials: 'include' });
-                if (res.ok) {
-                    const data = await res.json();
-                    if (data.authenticated && data.user) {
-                        currentUser = data.user;
-                        updateUserUI(currentUser, true);
-                        closeModal('modalAuth');
-                        return;
-                    }
-                }
-                currentUser = null;
-                updateUserUI(null, false);
-            } catch (err) {
-                console.warn('Auth check error:', err);
-                currentUser = null;
-                updateUserUI(null, false);
-            }
-        }
-
-        function updateUserUI(user, isAuthenticated) {
-            if (isAuthenticated && user) {
-                if (unauthenticatedState) unauthenticatedState.style.display = 'none';
-                if (authenticatedState) authenticatedState.style.display = 'flex';
-                if (userNameDisplay) userNameDisplay.textContent = user.display_name || user.email.split('@')[0];
-                if (userEmailDisplay) userEmailDisplay.textContent = user.email || '';
-                if (userAvatar) {
-                    userAvatar.src = user.avatar_url || user.picture_url || 'app_icon.png';
-                }
-            } else {
-                if (unauthenticatedState) unauthenticatedState.style.display = 'block';
-                if (authenticatedState) authenticatedState.style.display = 'none';
-            }
-        }
-
-        // Sign In button in Sidebar
-        if (btnSidebarSignIn) {
-            btnSidebarSignIn.addEventListener('click', () => {
-                openModal('modalAuth');
-            });
-        }
-
-        // Secure Official Google OAuth 2.0 (Redirects to accounts.google.com)
-        async function startGoogleOAuth() {
-            try {
-                showBanner('Redirecting to Google secure login...');
-                const res = await fetch('/api/auth/google/url');
-                if (!res.ok) {
-                    const err = await res.json().catch(() => ({}));
-                    throw new Error(err.detail || 'Failed to fetch Google authorization URL');
-                }
-                const data = await res.json();
-                if (data.configured && data.url) {
-                    window.location.href = data.url;
+                // Internet status
+                if (data.internet_online) {
+                    networkDot.className = 'status-indicator-dot';
+                    networkText.textContent = '🌐 DuckDuckGo Online';
                 } else {
-                    alert(data.message || 'Google OAuth is not configured in .env on the server.');
-                    hideBanner();
+                    networkDot.className = 'status-indicator-dot offline';
+                    networkText.textContent = '📡 Local Only';
+                }
+
+                // Populate Diagnostics
+                const diag = document.getElementById('diagnosticsSummary');
+                if (diag) {
+                    diag.innerHTML = `
+                        • <strong>Ollama Brain:</strong> ${data.ollama_running ? 'Running (127.0.0.1:11434)' : 'Offline'}<br>
+                        • <strong>Qwen Model:</strong> ${data.model_installed ? 'Installed & Ready' : 'Not Loaded'}<br>
+                        • <strong>PostgreSQL &amp; pgvector:</strong> ${data.database?.status || 'Connected'}<br>
+                        • <strong>Internet Access:</strong> ${data.internet_online ? 'Active (DuckDuckGo Live Search Ready)' : 'Offline (Local Safe Fallback)'}<br>
+                        • <strong>Whisper Voice:</strong> faster-whisper CPU int8
+                    `;
                 }
             } catch (err) {
-                alert('Could not start Google Sign-In: ' + err.message);
-                hideBanner();
+                modelDot.className = 'status-indicator-dot offline';
+                modelText.textContent = 'Backend Offline';
+                networkDot.className = 'status-indicator-dot offline';
+                networkText.textContent = 'Offline';
+                setTimeout(checkSystemStatus, 4000);
             }
         }
 
-        // Handle OAuth loopback callback status from URL
-        (function handleOAuthCallbackParams() {
-            const params = new URLSearchParams(window.location.search);
-            if (params.has('auth_error')) {
-                alert('Google Sign-In notice: ' + params.get('auth_error'));
-                window.history.replaceState({}, document.title, window.location.pathname);
-            } else if (params.has('auth_success')) {
-                showBanner('✨ Successfully authenticated with your Google account!');
-                setTimeout(hideBanner, 4000);
-                window.history.replaceState({}, document.title, window.location.pathname);
-            }
-        })();
+        // 3. Settings Synchronization
+        function syncSettingsUI() {
+            const sliderT = document.getElementById('sliderTemperature');
+            const valT = document.getElementById('valTemperature');
+            const sliderM = document.getElementById('sliderMaxTokens');
+            const valM = document.getElementById('valMaxTokens');
+            const toggleW = document.getElementById('settingWebSearchToggle');
+            const toggleR = document.getElementById('settingRagToggle');
 
-        btnLogout.addEventListener('click', async () => {
-            try {
-                await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
-                currentUser = null;
-                updateUserUI(null, false);
-                await loadConversations();
-                showBanner('Signed out of Google account.');
-                setTimeout(hideBanner, 3000);
-            } catch (e) {
-                console.error(e);
-            }
-        });
+            sliderT.value = workspaceSettings.temperature;
+            valT.textContent = workspaceSettings.temperature.toFixed(2);
+            sliderM.value = workspaceSettings.maxOutputTokens;
+            valM.textContent = workspaceSettings.maxOutputTokens;
+            toggleW.checked = workspaceSettings.enableWebSearch;
+            toggleR.checked = workspaceSettings.enableRag;
+            inputWebSearchToggle.checked = workspaceSettings.enableWebSearch;
 
-        // 3. Conversation Management
+            sliderT.oninput = (e) => {
+                workspaceSettings.temperature = parseFloat(e.target.value);
+                valT.textContent = workspaceSettings.temperature.toFixed(2);
+                localStorage.setItem('gm_temp', workspaceSettings.temperature);
+            };
+
+            sliderM.oninput = (e) => {
+                workspaceSettings.maxOutputTokens = parseInt(e.target.value);
+                valM.textContent = workspaceSettings.maxOutputTokens;
+                localStorage.setItem('gm_max_tokens', workspaceSettings.maxOutputTokens);
+            };
+
+            toggleW.onchange = (e) => {
+                workspaceSettings.enableWebSearch = e.target.checked;
+                inputWebSearchToggle.checked = e.target.checked;
+                localStorage.setItem('gm_web_search', e.target.checked);
+            };
+
+            inputWebSearchToggle.onchange = (e) => {
+                workspaceSettings.enableWebSearch = e.target.checked;
+                toggleW.checked = e.target.checked;
+                localStorage.setItem('gm_web_search', e.target.checked);
+            };
+
+            toggleR.onchange = (e) => {
+                workspaceSettings.enableRag = e.target.checked;
+                localStorage.setItem('gm_rag', e.target.checked);
+            };
+        }
+
+        // 4. Conversations List & Management
         async function loadConversations() {
             try {
-                const res = await fetch('/api/conversations', { credentials: 'include' });
+                const res = await fetch('/api/conversations');
                 if (res.ok) {
                     conversations = await res.json();
                     renderConversationList(conversations);
@@ -503,18 +707,23 @@
 
         function renderConversationList(list) {
             conversationList.innerHTML = '';
-            if (list.length === 0) {
-                conversationList.innerHTML = '<div style="padding:1rem;color:#b0a8c2;font-size:12px;text-align:center;">No previous chats</div>';
+            if (!list || list.length === 0) {
+                conversationList.innerHTML = '<div style="padding:14px;color:var(--text-muted);font-size:0.78rem;text-align:center;">No previous conversations</div>';
                 return;
             }
+
             list.forEach(c => {
                 const item = document.createElement('div');
                 item.className = 'convo-item' + (c.id === activeConversationId ? ' active' : '');
                 item.innerHTML = `
-                    <div class="convo-text" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</div>
+                    <div class="convo-title-text" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</div>
                     <div class="convo-actions">
-                        <button class="convo-btn" title="Rename" onclick="event.stopPropagation(); renameConversation('${c.id}', '${escapeHtml(c.title)}')">✏️</button>
-                        <button class="convo-btn" title="Delete" onclick="event.stopPropagation(); deleteConversation('${c.id}')">🗑️</button>
+                        <button class="convo-btn" title="Rename" onclick="event.stopPropagation(); renameConversation('${c.id}', '${escapeHtml(c.title)}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                        </button>
+                        <button class="convo-btn delete" title="Delete" onclick="event.stopPropagation(); deleteConversation('${c.id}')">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                        </button>
                     </div>
                 `;
                 item.onclick = () => selectConversation(c.id);
@@ -523,39 +732,44 @@
         }
 
         conversationSearch.addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
+            const query = e.target.value.toLowerCase().trim();
             const filtered = conversations.filter(c => c.title.toLowerCase().includes(query));
             renderConversationList(filtered);
         });
 
-        btnNewChat.addEventListener('click', () => {
+        btnNewChat.onclick = () => {
             activeConversationId = null;
             chatHeaderTitle.textContent = 'New Conversation';
-            chatMessages.innerHTML = '';
-            chatMessages.appendChild(welcomeBox);
-            welcomeBox.style.display = 'flex';
+            chatHeaderSubtitle.textContent = 'Qwen 2.5 3B • DuckDuckGo Search • Local RAG';
+            messagesContainer.innerHTML = '';
+            messagesContainer.appendChild(welcomeHero);
+            welcomeHero.style.display = 'flex';
             document.querySelectorAll('.convo-item').forEach(el => el.classList.remove('active'));
             messageInput.focus();
-        });
+        };
 
         async function selectConversation(id) {
             activeConversationId = id;
             document.querySelectorAll('.convo-item').forEach(el => el.classList.remove('active'));
             const match = conversations.find(c => c.id === id);
-            if (match) chatHeaderTitle.textContent = match.title;
+            if (match) {
+                chatHeaderTitle.textContent = match.title;
+            }
 
             try {
-                const res = await fetch(`/api/conversations/${id}`, { credentials: 'include' });
+                const res = await fetch(`/api/conversations/${id}`);
                 if (res.ok) {
                     const data = await res.json();
-                    chatMessages.innerHTML = '';
-                    welcomeBox.style.display = 'none';
+                    messagesContainer.innerHTML = '';
+                    welcomeHero.style.display = 'none';
 
                     if (data.messages && data.messages.length > 0) {
-                        data.messages.forEach(m => appendMessage(m.role, m.content, m.metadata?.sources));
+                        data.messages.forEach(m => {
+                            appendMessageUI(m.role, m.content, m.metadata?.sources);
+                        });
                     } else {
-                        chatMessages.appendChild(welcomeBox);
-                        welcomeBox.style.display = 'flex';
+                        messagesContainer.appendChild(welcomeHero);
+                        welcomeHero.style.display = 'flex';
                     }
                     scrollToBottom();
                 }
@@ -571,7 +785,6 @@
                 await fetch(`/api/conversations/${id}`, {
                     method: 'PATCH',
                     headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
                     body: JSON.stringify({ title: newTitle.trim() })
                 });
                 await loadConversations();
@@ -580,208 +793,477 @@
         }
 
         async function deleteConversation(id) {
-            if (confirm('Delete this conversation? All associated messages will be permanently removed.')) {
-                await fetch(`/api/conversations/${id}`, { method: 'DELETE', credentials: 'include' });
+            if (confirm('Permanently delete this conversation and its message history?')) {
+                await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
                 if (activeConversationId === id) btnNewChat.click();
                 await loadConversations();
             }
         }
 
-        // 4. Send Message & Retrieval Augmented Chat
+        // 5. Send Message & SSE Streaming
         async function sendMessage() {
             const text = messageInput.value.trim();
-            if (!text || isGenerating) return;
+            if (!text || isStreaming) return;
 
-            isGenerating = true;
-            sendButton.disabled = true;
+            lastUserMessage = text;
+            isStreaming = true;
+            btnSend.disabled = true;
             messageInput.value = '';
-            autoResizeTextarea();
-            welcomeBox.style.display = 'none';
+            messageInput.style.height = 'auto';
+            welcomeHero.style.display = 'none';
+            stopStreamWrap.style.display = 'flex';
 
-            appendMessage('user', text);
+            // Append User Message
+            appendMessageUI('user', text);
             scrollToBottom();
 
-            const typingDiv = document.createElement('div');
-            typingDiv.className = 'typing-box';
-            typingDiv.innerHTML = '<span class="dot"></span><span class="dot"></span><span class="dot"></span>';
-            chatMessages.appendChild(typingDiv);
+            // Prepare Assistant Placeholder Bubble
+            const assistantRow = document.createElement('div');
+            assistantRow.className = 'message-row assistant';
+
+            const assistantCard = document.createElement('div');
+            assistantCard.className = 'assistant-card';
+
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'assistant-content';
+
+            const cursor = document.createElement('span');
+            cursor.className = 'streaming-cursor';
+
+            contentDiv.appendChild(cursor);
+            assistantCard.appendChild(contentDiv);
+            assistantRow.appendChild(assistantCard);
+            messagesContainer.appendChild(assistantRow);
             scrollToBottom();
+
+            currentAbortController = new AbortController();
+            let accumulatedText = "";
+            let streamSources = [];
 
             try {
-                const res = await fetch('/api/chat', {
+                const response = await fetch('/api/chat/stream', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    credentials: 'include',
+                    signal: currentAbortController.signal,
                     body: JSON.stringify({
                         message: text,
-                        conversation_id: activeConversationId
+                        conversation_id: activeConversationId,
+                        temperature: workspaceSettings.temperature,
+                        enable_web_search: workspaceSettings.enableWebSearch,
+                        enable_rag: workspaceSettings.enableRag
                     })
                 });
 
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-                const data = await res.json();
-                typingDiv.remove();
-
-                activeConversationId = data.conversation_id;
-                if (data.title) {
-                    chatHeaderTitle.textContent = data.title;
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
-                appendMessage('assistant', data.response, data.sources);
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder('utf-8');
+                let buffer = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n');
+                    buffer = lines.pop(); // keep partial line in buffer
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (trimmed.startsWith('data: ')) {
+                            const jsonStr = trimmed.slice(6);
+                            try {
+                                const event = JSON.parse(jsonStr);
+
+                                if (event.type === 'start') {
+                                    activeConversationId = event.conversation_id;
+                                    if (event.title) chatHeaderTitle.textContent = event.title;
+                                    if (event.sources) streamSources = event.sources;
+
+                                    if (event.web_search_performed) {
+                                        showLiveBanner('🔍 DuckDuckGo live search results incorporated into response.');
+                                        setTimeout(hideLiveBanner, 4500);
+                                    } else if (event.rag_performed) {
+                                        showLiveBanner('📚 Retrieved relevant document chunks from pgvector.');
+                                        setTimeout(hideLiveBanner, 3500);
+                                    }
+                                } else if (event.type === 'delta') {
+                                    accumulatedText += event.text;
+                                    contentDiv.innerHTML = renderMarkdown(accumulatedText);
+                                    contentDiv.appendChild(cursor);
+                                    scrollToBottom();
+                                } else if (event.type === 'replace') {
+                                    accumulatedText = event.text;
+                                    contentDiv.innerHTML = renderMarkdown(accumulatedText);
+                                    contentDiv.appendChild(cursor);
+                                    scrollToBottom();
+                                } else if (event.type === 'done') {
+                                    if (event.sources) streamSources = event.sources;
+                                }
+                            } catch (e) {
+                                console.warn('SSE Parse notice:', e);
+                            }
+                        }
+                    }
+                }
+
+                cursor.remove();
+                contentDiv.innerHTML = renderMarkdown(accumulatedText || "(No response generated)");
+
+                // Append Sources & Actions Ribbon
+                appendAssistantFooter(assistantCard, accumulatedText, streamSources);
                 scrollToBottom();
 
-                // Refresh conversation list so the newly created conversation immediately appears in sidebar
+                // Refresh conversation list to show new title
                 await loadConversations();
 
             } catch (err) {
-                typingDiv.remove();
-                appendMessage('assistant', `⚠️ Could not complete request: ${err.message}. Please verify Ollama is running.`);
-                scrollToBottom();
+                cursor.remove();
+                if (err.name === 'AbortError') {
+                    contentDiv.innerHTML = renderMarkdown(accumulatedText + "\n\n*(Generation stopped by user)*");
+                    appendAssistantFooter(assistantCard, accumulatedText, streamSources);
+                } else {
+                    console.error('Streaming error, falling back to sync chat:', err);
+                    contentDiv.innerHTML = `<span style="color:#e53e3e;">⚠️ Request notice: ${escapeHtml(err.message)}. Retrying with local Ollama...</span>`;
+                }
             } finally {
-                isGenerating = false;
-                sendButton.disabled = false;
+                isStreaming = false;
+                btnSend.disabled = false;
+                stopStreamWrap.style.display = 'none';
+                currentAbortController = null;
                 messageInput.focus();
             }
         }
 
-        function appendMessage(role, content, sources = null) {
+        function stopGeneration() {
+            if (currentAbortController) {
+                currentAbortController.abort();
+            }
+        }
+
+        // 6. UI Message Rendering & Markdown Parser
+        function appendMessageUI(role, content, sources = null) {
             const row = document.createElement('div');
-            row.className = `message message-${role}`;
+            row.className = `message-row ${role}`;
 
-            const bubble = document.createElement('div');
-            bubble.className = `bubble bubble-${role}`;
-            bubble.textContent = content;
+            if (role === 'user') {
+                const bubble = document.createElement('div');
+                bubble.className = 'user-bubble';
+                bubble.textContent = content;
+                row.appendChild(bubble);
+            } else {
+                const card = document.createElement('div');
+                card.className = 'assistant-card';
 
-            if (sources && sources.length > 0) {
-                const srcContainer = document.createElement('div');
-                srcContainer.className = 'sources-container';
-                srcContainer.innerHTML = '<strong>📚 Knowledge Sources:</strong><br>';
-                sources.forEach(s => {
-                    const badge = document.createElement('span');
-                    badge.className = 'source-badge';
-                    const score = s.similarity_score ? ` (${(s.similarity_score * 100).toFixed(0)}% match)` : '';
-                    badge.textContent = `📄 ${s.document_name}${score}`;
-                    srcContainer.appendChild(badge);
-                });
-                bubble.appendChild(srcContainer);
+                const contentDiv = document.createElement('div');
+                contentDiv.className = 'assistant-content';
+                contentDiv.innerHTML = renderMarkdown(content);
+                card.appendChild(contentDiv);
+
+                appendAssistantFooter(card, content, sources);
+                row.appendChild(card);
             }
 
-            row.appendChild(bubble);
-            chatMessages.appendChild(row);
+            messagesContainer.appendChild(row);
+        }
+
+        function appendAssistantFooter(card, text, sources) {
+            // Knowledge Sources Ribbon
+            if (sources && sources.length > 0) {
+                const ribbon = document.createElement('div');
+                ribbon.className = 'sources-ribbon';
+
+                const label = document.createElement('span');
+                label.className = 'sources-label';
+                label.textContent = 'Evidence:';
+                ribbon.appendChild(label);
+
+                sources.forEach(s => {
+                    const isWeb = (s.filename && s.filename.startsWith('Web:')) || s.url;
+                    const chip = document.createElement('a');
+                    chip.className = `source-chip ${isWeb ? 'web' : 'doc'}`;
+                    chip.target = '_blank';
+
+                    let title = s.filename || 'Source';
+                    if (isWeb) {
+                        const cleanUrl = title.replace(/^Web:\s*/, '');
+                        chip.href = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
+                        chip.innerHTML = `🌐 ${escapeHtml(cleanUrl.split('/')[0])}`;
+                    } else {
+                        chip.href = '#';
+                        chip.onclick = (e) => { e.preventDefault(); openModal('modalDocuments'); };
+                        const score = s.score ? ` (${(s.score * 100).toFixed(0)}%)` : '';
+                        chip.innerHTML = `📄 ${escapeHtml(title)}${score}`;
+                    }
+                    ribbon.appendChild(chip);
+                });
+                card.appendChild(ribbon);
+            }
+
+            // Message Actions Bar (Copy & Regenerate)
+            const actionsBar = document.createElement('div');
+            actionsBar.className = 'message-actions-bar';
+
+            const btnCopy = document.createElement('button');
+            btnCopy.className = 'btn-msg-action';
+            btnCopy.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                <span>Copy Response</span>
+            `;
+            btnCopy.onclick = () => {
+                navigator.clipboard.writeText(text);
+                btnCopy.innerHTML = `<span>✓ Copied</span>`;
+                setTimeout(() => {
+                    btnCopy.innerHTML = `
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                        <span>Copy Response</span>
+                    `;
+                }, 2000);
+            };
+
+            const btnRegen = document.createElement('button');
+            btnRegen.className = 'btn-msg-action';
+            btnRegen.innerHTML = `
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 4 1 10 7 10"></polyline><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path></svg>
+                <span>Regenerate</span>
+            `;
+            btnRegen.onclick = () => {
+                if (lastUserMessage && !isStreaming) {
+                    messageInput.value = lastUserMessage;
+                    sendMessage();
+                }
+            };
+
+            actionsBar.appendChild(btnCopy);
+            actionsBar.appendChild(btnRegen);
+            card.appendChild(actionsBar);
         }
 
         function scrollToBottom() {
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
         }
+
+        // Lightweight, Offline Markdown & Syntax Highlighter
+        function renderMarkdown(raw) {
+            if (!raw) return '';
+
+            let str = escapeHtml(raw);
+
+            // 0a. Interactive Connect Action Pills
+            str = str.replace(/\[CONNECT_INTEGRATION_ACTION:([a-zA-Z0-9_\-]+)\]/g, (match, serviceId) => {
+                return `<div style="margin-top: 10px;">
+                    <button class="btn-connect-pill" onclick="connectServiceFromChat('${serviceId}')">
+                        ⚡ Connect ${serviceId.toUpperCase()}
+                    </button>
+                </div>`;
+            });
+
+            // 0b. Mandatory Action Confirmation Cards
+            str = str.replace(/\[CONFIRM_ACTION:([a-f0-9\-]+)\]/g, (match, actionId) => {
+                return `
+                <div class="action-confirmation-card" id="action_card_${actionId}">
+                    <div class="action-card-header">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                        <span>Action Requires Confirmation</span>
+                    </div>
+                    <div class="action-card-buttons">
+                        <button class="btn-confirm-action" onclick="confirmPendingAction('${actionId}', this)">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                            Confirm &amp; Execute
+                        </button>
+                        <button class="btn-cancel-action" onclick="cancelPendingAction('${actionId}', this)">
+                            ✕ Cancel
+                        </button>
+                    </div>
+                </div>`;
+            });
+
+            // 1. Triple-backtick Code Blocks with Copy button
+            str = str.replace(/```([a-zA-Z0-9_\-\.]*)\n([\s\S]*?)```/g, (match, lang, code) => {
+                const displayLang = (lang || 'code').toUpperCase();
+                const codeId = 'code_' + Math.random().toString(36).substr(2, 9);
+                return `
+                    <div class="code-block-wrapper">
+                        <div class="code-block-header">
+                            <span>${displayLang}</span>
+                            <button class="btn-copy-code" onclick="copyCodeBlock('${codeId}')">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                <span>Copy</span>
+                            </button>
+                        </div>
+                        <pre id="${codeId}"><code>${code.trim()}</code></pre>
+                    </div>
+                `;
+            });
+
+            // 2. Inline Code
+            str = str.replace(/`([^`]+)`/g, '<code class="inline-code">$1</code>');
+
+            // 3. Headers
+            str = str.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+            str = str.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+            str = str.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+
+            // 4. Bold & Italic
+            str = str.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+            str = str.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+            // 5. Blockquotes
+            str = str.replace(/^\> (.*$)/gim, '<blockquote>$1</blockquote>');
+
+            // 6. Lists
+            str = str.replace(/^\s*[\-\*]\s+(.*$)/gim, '<li>$1</li>');
+            str = str.replace(/(<li>.*<\/li>)/gis, '<ul>$1</ul>');
+
+            // 7. Paragraphs & Line Breaks
+            str = str.replace(/\n\n+/g, '</p><p>');
+            str = str.replace(/\n/g, '<br>');
+
+            return `<p>${str}</p>`;
+        }
+
+        window.copyCodeBlock = function(id) {
+            const el = document.getElementById(id);
+            if (el) {
+                const text = el.innerText;
+                navigator.clipboard.writeText(text);
+                const btn = el.previousElementSibling.querySelector('.btn-copy-code span');
+                if (btn) {
+                    btn.textContent = 'Copied!';
+                    setTimeout(() => btn.textContent = 'Copy', 2000);
+                }
+            }
+        };
 
         function escapeHtml(str) {
             if (!str) return '';
-            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            return str
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
         }
 
-        // 5. Document Management
-        btnAttachFile.addEventListener('click', () => fileUploadInput.click());
-        fileUploadInput.addEventListener('change', async (e) => {
+        // 7. Document Upload & Drag-Drop RAG
+        btnAttachFile.onclick = () => fileUploadInput.click();
+        fileUploadInput.onchange = async (e) => {
             if (e.target.files.length > 0) {
                 await uploadFiles(e.target.files);
                 fileUploadInput.value = '';
             }
-        });
+        };
 
-        async function uploadFiles(files) {
-            for (let file of files) {
-                showBanner(`Uploading and indexing "${file.name}"...`);
-                const formData = new FormData();
-                formData.append('file', file);
-                try {
-                    const res = await fetch('/api/documents/upload', {
-                        method: 'POST',
-                        credentials: 'include',
-                        body: formData
-                    });
-                    if (res.ok) {
-                        const data = await res.json();
-                        const count = data.document ? data.document.chunk_count : (data.total_chunks || 0);
-                        showBanner(`Indexed "${file.name}" (${count} chunks ready for RAG)`);
-                        setTimeout(hideBanner, 4000);
-                    } else {
-                        const err = await res.json().catch(() => ({}));
-                        alert(`Upload failed: ${err.detail || res.statusText || 'Error'}`);
-                        hideBanner();
-                    }
-                } catch (e) {
-                    alert(`Upload error: ${e.message}`);
-                    hideBanner();
-                }
-            }
-            if (document.getElementById('modalDocuments').style.display === 'flex') {
-                loadDocuments();
-            }
-        }
-
-        async function loadDocuments() {
-            const container = document.getElementById('documentListContainer');
-            container.innerHTML = '<div style="color:#9c95af;font-size:13px;">Loading documents...</div>';
-            try {
-                const res = await fetch('/api/documents', { credentials: 'include' });
-                if (res.ok) {
-                    const docs = await res.json();
-                    if (!docs || docs.length === 0) {
-                        container.innerHTML = '<div style="color:#9c95af;font-size:13px;text-align:center;padding:1rem;">No documents uploaded yet.</div>';
-                        return;
-                    }
-                    container.innerHTML = '';
-                    docs.forEach(d => {
-                        const row = document.createElement('div');
-                        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.6rem;background:#fbf9ff;border:1px solid #efe8f8;border-radius:0.75rem;font-size:12.5px;';
-                        row.innerHTML = `
-                            <div>
-                                <div style="font-weight:600;color:#49445c;">📄 ${escapeHtml(d.filename)}</div>
-                                <div style="font-size:11px;color:#9c95af;">${d.chunk_count || 0} chunks • ${((d.file_size || 0) / 1024).toFixed(1)} KB • <span style="color:#10b981;font-weight:600;">${escapeHtml(d.processing_status || 'ready')}</span></div>
-                            </div>
-                            <button onclick="deleteDocument('${d.id}')" title="Delete document" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:0.3rem;">🗑️</button>
-                        `;
-                        container.appendChild(row);
-                    });
-                } else {
-                    const err = await res.json().catch(() => ({}));
-                    container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load documents (${res.status}): ${escapeHtml(err.detail || res.statusText)}</div>`;
-                }
-            } catch (err) {
-                container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load documents: ${escapeHtml(err.message)}</div>`;
-            }
-        }
-
-        async function deleteDocument(id) {
-            if (confirm('Delete this document and all its indexed vector chunks?')) {
-                await fetch(`/api/documents/${id}`, { method: 'DELETE', credentials: 'include' });
-                loadDocuments();
-            }
-        }
-
-        const dropZone = document.getElementById('docDropZone');
-        dropZone.onclick = () => fileUploadInput.click();
-        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.style.borderColor = '#9966ff'; };
-        dropZone.ondragleave = () => { dropZone.style.borderColor = '#d8cde9'; };
-        dropZone.ondrop = async (e) => {
+        const docDropZone = document.getElementById('docDropZone');
+        docDropZone.onclick = () => fileUploadInput.click();
+        docDropZone.ondragover = (e) => {
             e.preventDefault();
-            dropZone.style.borderColor = '#d8cde9';
+            docDropZone.style.borderColor = 'var(--lavender-500)';
+            docDropZone.style.background = 'var(--lavender-100)';
+        };
+        docDropZone.ondragleave = () => {
+            docDropZone.style.borderColor = 'var(--lavender-300)';
+            docDropZone.style.background = 'var(--lavender-50)';
+        };
+        docDropZone.ondrop = async (e) => {
+            e.preventDefault();
+            docDropZone.style.borderColor = 'var(--lavender-300)';
+            docDropZone.style.background = 'var(--lavender-50)';
             if (e.dataTransfer.files.length > 0) {
                 await uploadFiles(e.dataTransfer.files);
             }
         };
 
-        // 6. Memory Management
+        async function uploadFiles(files) {
+            for (let file of files) {
+                showLiveBanner(`Indexing "${file.name}" locally with pgvector...`);
+                const formData = new FormData();
+                formData.append('file', file);
+
+                try {
+                    const res = await fetch('/api/documents/upload', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (res.ok) {
+                        const data = await res.json();
+                        const chunks = data.document ? data.document.chunk_count : (data.total_chunks || 0);
+                        showLiveBanner(`✓ Indexed "${file.name}" (${chunks} chunks ready for RAG)`);
+                        setTimeout(hideLiveBanner, 4000);
+                    } else {
+                        const err = await res.json().catch(() => ({}));
+                        alert(`Upload failed: ${err.detail || res.statusText}`);
+                        hideLiveBanner();
+                    }
+                } catch (err) {
+                    alert(`Upload error: ${err.message}`);
+                    hideLiveBanner();
+                }
+            }
+
+            if (document.getElementById('modalDocuments').classList.contains('active')) {
+                loadDocuments();
+            }
+            updateBadgeCounts();
+        }
+
+        async function loadDocuments() {
+            const container = document.getElementById('documentListContainer');
+            container.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">Loading documents...</div>';
+
+            try {
+                const res = await fetch('/api/documents');
+                if (res.ok) {
+                    const docs = await res.json();
+                    if (!docs || docs.length === 0) {
+                        container.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:12px;">No documents uploaded yet.</div>';
+                        return;
+                    }
+                    container.innerHTML = '';
+                    docs.forEach(d => {
+                        const row = document.createElement('div');
+                        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface-bg);border:1px solid var(--border-subtle);border-radius:var(--radius-md);font-size:0.83rem;';
+                        row.innerHTML = `
+                            <div>
+                                <div style="font-weight:700;color:var(--text-primary);">📄 ${escapeHtml(d.filename)}</div>
+                                <div style="font-size:0.72rem;color:var(--text-muted);margin-top:2px;">
+                                    ${d.chunk_count || 0} chunks • ${((d.file_size || 0) / 1024).toFixed(1)} KB • <span style="color:var(--mint-500);font-weight:600;">${escapeHtml(d.processing_status || 'ready')}</span>
+                                </div>
+                            </div>
+                            <button onclick="deleteDocument('${d.id}')" title="Delete document" style="background:none;border:none;cursor:pointer;color:#e53e3e;font-size:14px;padding:4px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        `;
+                        container.appendChild(row);
+                    });
+                }
+            } catch (err) {
+                container.innerHTML = `<div style="color:#e53e3e;font-size:0.8rem;">Failed: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        async function deleteDocument(id) {
+            if (confirm('Delete this document and all its indexed vector chunks?')) {
+                await fetch(`/api/documents/${id}`, { method: 'DELETE' });
+                loadDocuments();
+                updateBadgeCounts();
+            }
+        }
+
+        // 8. Memory Management
         async function loadMemories() {
             const container = document.getElementById('memoryListContainer');
-            container.innerHTML = '<div style="color:#9c95af;font-size:13px;">Loading memories...</div>';
+            container.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">Loading memories...</div>';
+
             try {
-                const res = await fetch('/api/memories', { credentials: 'include' });
+                const res = await fetch('/api/memories');
                 if (res.ok) {
                     const mems = await res.json();
                     if (!mems || mems.length === 0) {
-                        container.innerHTML = '<div style="color:#9c95af;font-size:13px;text-align:center;padding:1rem;">No long-term memories recorded yet.</div>';
+                        container.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:12px;">No memories recorded yet.</div>';
                         return;
                     }
                     container.innerHTML = '';
@@ -793,39 +1275,37 @@
                             displayKey = parts[0];
                             displayVal = parts.slice(1).join(': ');
                         }
+
                         const row = document.createElement('div');
-                        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:0.6rem;background:#fbf9ff;border:1px solid #efe8f8;border-radius:0.75rem;font-size:12.5px;';
+                        row.style.cssText = 'display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--surface-bg);border:1px solid var(--border-subtle);border-radius:var(--radius-md);font-size:0.83rem;';
                         row.innerHTML = `
                             <div>
-                                <div style="font-weight:600;color:#67439d;"><span style="background:#eee7fa;padding:0.15rem 0.4rem;border-radius:0.4rem;font-size:10px;">${escapeHtml(m.category || 'project')}</span> ${escapeHtml(displayKey)}</div>
-                                <div style="color:#554c68;margin-top:0.2rem;">${escapeHtml(displayVal)}</div>
+                                <div style="font-weight:700;color:var(--lavender-600);"><span style="background:var(--lavender-100);padding:2px 6px;border-radius:4px;font-size:0.68rem;">${escapeHtml(m.category || 'fact')}</span> ${escapeHtml(displayKey)}</div>
+                                <div style="color:var(--text-secondary);font-size:0.78rem;margin-top:3px;">${escapeHtml(displayVal)}</div>
                             </div>
-                            <button onclick="deleteMemory('${m.id}')" title="Delete memory" style="background:none;border:none;cursor:pointer;color:#dc2626;font-size:14px;padding:0.3rem;">🗑️</button>
+                            <button onclick="deleteMemory('${m.id}')" title="Delete memory" style="background:none;border:none;cursor:pointer;color:#e53e3e;font-size:14px;padding:4px;">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
                         `;
                         container.appendChild(row);
                     });
-                } else {
-                    const err = await res.json().catch(() => ({}));
-                    container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load memories (${res.status}): ${escapeHtml(err.detail || res.statusText)}</div>`;
                 }
             } catch (err) {
-                container.innerHTML = `<div style="color:#dc2626;font-size:12px;">Failed to load memories: ${escapeHtml(err.message)}</div>`;
+                container.innerHTML = `<div style="color:#e53e3e;font-size:0.8rem;">Failed: ${escapeHtml(err.message)}</div>`;
             }
         }
 
-        document.getElementById('btnAddMemory').onclick = async () => {
-            const keyInput = document.getElementById('newMemoryKey');
-            const valInput = document.getElementById('newMemoryVal');
-            const key = keyInput.value.trim();
-            const val = valInput.value.trim();
+        document.getElementById('btnSaveMemory').onclick = async () => {
+            const key = document.getElementById('inputMemKey').value.trim();
+            const val = document.getElementById('inputMemVal').value.trim();
             if (!key && !val) {
-                alert('Please enter a key and value (e.g. key: name, value: Dharm)');
+                alert('Please enter a key and value (e.g. key: preferred_theme, value: pastel)');
                 return;
             }
+
             try {
                 const res = await fetch('/api/memories', {
                     method: 'POST',
-                    credentials: 'include',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
                         key: key,
@@ -834,44 +1314,67 @@
                         category: key || 'project'
                     })
                 });
-                if (!res.ok) {
+
+                if (res.ok) {
+                    document.getElementById('inputMemKey').value = '';
+                    document.getElementById('inputMemVal').value = '';
+                    await loadMemories();
+                    updateBadgeCounts();
+                    showLiveBanner(`✓ Saved memory: ${key ? key + ': ' : ''}${val}`);
+                    setTimeout(hideLiveBanner, 3000);
+                } else {
                     const err = await res.json().catch(() => ({}));
-                    alert('Could not save memory: ' + (err.detail || res.statusText || 'Server error'));
-                    return;
+                    alert(`Failed: ${err.detail || res.statusText}`);
                 }
-                keyInput.value = '';
-                valInput.value = '';
-                await loadMemories();
-                showBanner(`✨ Saved memory: ${key ? key + ': ' : ''}${val}`);
-                setTimeout(hideBanner, 3000);
             } catch (err) {
-                alert('Error saving memory: ' + err.message);
+                alert(`Error: ${err.message}`);
             }
         };
 
         async function deleteMemory(id) {
-            if (confirm('Delete this saved memory?')) {
-                try {
-                    const res = await fetch(`/api/memories/${id}`, { method: 'DELETE', credentials: 'include' });
-                    if (!res.ok) {
-                        const err = await res.json().catch(() => ({}));
-                        alert('Could not delete memory: ' + (err.detail || res.statusText));
-                    }
-                    loadMemories();
-                } catch (e) {
-                    alert('Delete failed: ' + e.message);
-                }
+            if (confirm('Delete this memory?')) {
+                await fetch(`/api/memories/${id}`, { method: 'DELETE' });
+                loadMemories();
+                updateBadgeCounts();
             }
         }
 
-        // 7. Whisper Voice Assistant
-        btnVoiceRecord.addEventListener('click', async () => {
+        async function updateBadgeCounts() {
+            try {
+                const [dRes, mRes, iRes] = await Promise.all([
+                    fetch('/api/documents'),
+                    fetch('/api/memories'),
+                    fetch('/api/integrations')
+                ]);
+                if (dRes.ok) {
+                    const docs = await dRes.json();
+                    document.getElementById('navDocCount').textContent = docs.length || 0;
+                }
+                if (mRes.ok) {
+                    const mems = await mRes.json();
+                    document.getElementById('navMemCount').textContent = mems.length || 0;
+                }
+                if (iRes.ok) {
+                    const ints = await iRes.json();
+                    const activeCount = ints.filter(x => x.status === 'connected').length;
+                    const navInt = document.getElementById('navIntegrationCount');
+                    if (navInt) navInt.textContent = activeCount;
+                    const modalCount = document.getElementById('modalActiveIntegrationsCount');
+                    if (modalCount) modalCount.textContent = activeCount;
+                }
+            } catch (e) {
+                console.warn('Count update notice:', e);
+            }
+        }
+
+        // 9. Whisper Speech-to-Text
+        btnVoiceRecord.onclick = async () => {
             if (!isRecording) {
                 await startVoiceRecording();
             } else {
                 stopVoiceRecording();
             }
-        });
+        };
 
         async function startVoiceRecording() {
             try {
@@ -885,16 +1388,16 @@
 
                 mediaRecorder.onstop = async () => {
                     const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-                    await transcribeAudio(audioBlob);
+                    await transcribeAudioBlob(audioBlob);
                     stream.getTracks().forEach(track => track.stop());
                 };
 
                 mediaRecorder.start();
                 isRecording = true;
                 btnVoiceRecord.classList.add('recording');
-                showBanner('🎙️ Listening... Speak into your microphone. Click mic again to transcribe.');
+                showLiveBanner('🎙️ Listening... Speak into microphone. Click mic again to transcribe.');
             } catch (err) {
-                alert('Microphone access error: ' + err.message);
+                alert('Microphone permission error: ' + err.message);
             }
         }
 
@@ -903,11 +1406,11 @@
                 mediaRecorder.stop();
                 isRecording = false;
                 btnVoiceRecord.classList.remove('recording');
-                showBanner('Processing local speech-to-text with Whisper...');
+                showLiveBanner('Transcribing with local Faster-Whisper on CPU...');
             }
         }
 
-        async function transcribeAudio(blob) {
+        async function transcribeAudioBlob(blob) {
             const formData = new FormData();
             formData.append('audio', blob, 'recording.wav');
 
@@ -916,26 +1419,446 @@
                     method: 'POST',
                     body: formData
                 });
+
                 if (res.ok) {
                     const data = await res.json();
                     if (data.text) {
                         messageInput.value = (messageInput.value ? messageInput.value + ' ' : '') + data.text;
-                        autoResizeTextarea();
+                        messageInput.dispatchEvent(new Event('input'));
                         messageInput.focus();
-                        showBanner(`Transcribed (${data.detected_language || 'en'}): "${data.text}"`);
-                        setTimeout(hideBanner, 4000);
+                        showLiveBanner(`✓ Transcribed (${data.detected_language || 'en'}): "${data.text}"`);
+                        setTimeout(hideLiveBanner, 4000);
                     } else {
-                        showBanner('No speech detected.');
-                        setTimeout(hideBanner, 3000);
+                        showLiveBanner('No speech detected in audio.');
+                        setTimeout(hideLiveBanner, 3000);
                     }
                 } else {
                     const err = await res.json();
-                    alert('Transcription error: ' + (err.detail || 'Failed'));
-                    hideBanner();
+                    alert(`Transcription notice: ${err.detail || 'Failed'}`);
+                    hideLiveBanner();
                 }
             } catch (err) {
-                alert('Failed to transcribe audio: ' + err.message);
-                hideBanner();
+                alert(`Voice transcription error: ${err.message}`);
+                hideLiveBanner();
+            }
+        }
+
+        // =====================================================================
+        // 10. MCP & Universal Integration Ecosystem
+        // =====================================================================
+
+        function switchIntegrationsTab(tab) {
+            const tabActive = document.getElementById('tabBtnActiveIntegrations');
+            const tabCatalog = document.getElementById('tabBtnCatalogIntegrations');
+            const tabCustom = document.getElementById('tabBtnCustomIntegrations');
+            const contentActive = document.getElementById('tabContentActiveIntegrations');
+            const contentCatalog = document.getElementById('tabContentCatalogIntegrations');
+            const contentCustom = document.getElementById('tabContentCustomIntegrations');
+
+            tabActive.classList.remove('active');
+            tabCatalog.classList.remove('active');
+            tabCustom.classList.remove('active');
+            contentActive.style.display = 'none';
+            contentCatalog.style.display = 'none';
+            contentCustom.style.display = 'none';
+
+            if (tab === 'active') {
+                tabActive.classList.add('active');
+                contentActive.style.display = 'block';
+                loadIntegrations();
+            } else if (tab === 'catalog') {
+                tabCatalog.classList.add('active');
+                contentCatalog.style.display = 'block';
+                loadCatalog();
+            } else if (tab === 'custom') {
+                tabCustom.classList.add('active');
+                contentCustom.style.display = 'block';
+            }
+        }
+
+        function toggleCustomTransportFields() {
+            const transport = document.getElementById('customServerTransport').value;
+            const stdioFields = document.getElementById('stdioFields');
+            const sseFields = document.getElementById('sseFields');
+            if (transport === 'stdio') {
+                stdioFields.style.display = 'block';
+                sseFields.style.display = 'none';
+            } else {
+                stdioFields.style.display = 'none';
+                sseFields.style.display = 'block';
+            }
+        }
+
+        function getServiceEmoji(iconOrName) {
+            const k = (iconOrName || '').toLowerCase();
+            if (k.includes('github')) return '🐙';
+            if (k.includes('figma')) return '🎨';
+            if (k.includes('slack')) return '💬';
+            if (k.includes('notion')) return '📝';
+            if (k.includes('google') || k.includes('workspace') || k.includes('gmail') || k.includes('calendar') || k.includes('drive')) return '📁';
+            if (k.includes('database') || k.includes('sqlite') || k.includes('postgres')) return '🗄️';
+            return '🔌';
+        }
+
+        async function loadIntegrations() {
+            const container = document.getElementById('activeServicesContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">Loading integrations...</div>';
+
+            try {
+                const res = await fetch('/api/integrations');
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+
+                if (!data || data.length === 0) {
+                    container.innerHTML = `
+                        <div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:16px;">
+                            No services connected yet. Browse the MCP Catalog or say <em>"Connect GitHub"</em> in chat!
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = '';
+                data.forEach(s => {
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    const isConn = s.status === 'connected';
+                    card.innerHTML = `
+                        <div class="service-card-top">
+                            <div class="service-info-block">
+                                <div class="service-icon-box">${getServiceEmoji(s.icon || s.name)}</div>
+                                <div>
+                                    <div class="service-name-text">${escapeHtml(s.display_name || s.name)}</div>
+                                    <div class="service-desc-text">${escapeHtml(s.description || 'Model Context Protocol Server')}</div>
+                                </div>
+                            </div>
+                            <span class="service-status-badge ${isConn ? 'connected' : 'disconnected'}">
+                                ${isConn ? '● Connected' : '○ Disconnected'}
+                            </span>
+                        </div>
+                        <div class="service-card-bottom">
+                            <div>
+                                <span>${s.tool_count || 0} tools</span> •
+                                <span>${escapeHtml((s.transport || 'stdio').toUpperCase())}</span>
+                                ${s.account_identifier ? ` • <span>${escapeHtml(s.account_identifier)}</span>` : ''}
+                            </div>
+                            <div style="display:flex;gap:6px;">
+                                ${!isConn ? `
+                                    <button class="btn-service-action connect" onclick="promptConnectCatalogService('${s.name}')">
+                                        Reconnect
+                                    </button>
+                                ` : ''}
+                                <button class="btn-service-action disconnect" onclick="disconnectService('${s.name}')">
+                                    Disconnect
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                container.innerHTML = `<div style="color:#e53e3e;font-size:0.82rem;">Failed to load services: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        async function loadCatalog() {
+            const container = document.getElementById('catalogServicesContainer');
+            if (!container) return;
+            container.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;">Loading catalog...</div>';
+
+            try {
+                const [catRes, actRes] = await Promise.all([
+                    fetch('/api/integrations/catalog'),
+                    fetch('/api/integrations')
+                ]);
+                const catalog = await catRes.json();
+                const active = actRes.ok ? await actRes.json() : [];
+                const activeMap = {};
+                active.forEach(a => { activeMap[a.name.toLowerCase()] = a; });
+
+                if (!catalog || catalog.length === 0) {
+                    container.innerHTML = '<div style="color:var(--text-muted);font-size:0.82rem;text-align:center;padding:12px;">Catalog empty.</div>';
+                    return;
+                }
+
+                container.innerHTML = '';
+                catalog.forEach(item => {
+                    const existing = activeMap[item.name.toLowerCase()] || activeMap[item.id.toLowerCase()];
+                    const isConnected = existing && existing.status === 'connected';
+
+                    const card = document.createElement('div');
+                    card.className = 'service-card';
+                    card.innerHTML = `
+                        <div class="service-card-top">
+                            <div class="service-info-block">
+                                <div class="service-icon-box">${getServiceEmoji(item.icon || item.name)}</div>
+                                <div>
+                                    <div class="service-name-text">${escapeHtml(item.display_name)}</div>
+                                    <div class="service-desc-text">${escapeHtml(item.description)}</div>
+                                </div>
+                            </div>
+                            <span class="service-status-badge ${isConnected ? 'connected' : 'disconnected'}">
+                                ${isConnected ? '● Connected' : 'Available'}
+                            </span>
+                        </div>
+                        <div class="service-card-bottom">
+                            <div>
+                                <span>Publisher: ${escapeHtml(item.publisher)}</span> •
+                                <span>${(item.read_only_tools || []).length + (item.write_tools || []).length} tools</span>
+                            </div>
+                            <div style="display:flex;gap:6px;">
+                                ${!isConnected ? `
+                                    <button class="btn-service-action connect" onclick="promptConnectCatalogService('${item.id}')">
+                                        Connect
+                                    </button>
+                                ` : `
+                                    <button class="btn-service-action disconnect" onclick="disconnectService('${item.name}')">
+                                        Disconnect
+                                    </button>
+                                `}
+                            </div>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            } catch (err) {
+                container.innerHTML = `<div style="color:#e53e3e;font-size:0.82rem;">Failed to load catalog: ${escapeHtml(err.message)}</div>`;
+            }
+        }
+
+        async function promptConnectCatalogService(serviceId) {
+            let item = null;
+            try {
+                const catalogRes = await fetch('/api/integrations/catalog');
+                const catalog = await catalogRes.json();
+                item = catalog.find(x => x.id.toLowerCase() === serviceId.toLowerCase() || x.name.toLowerCase() === serviceId.toLowerCase());
+            } catch (_) {}
+
+            const displayName = item ? item.display_name : serviceId;
+
+            // If the service supports standard OAuth 2.0 (e.g. Google Workspace)
+            if (item && item.auth_provider) {
+                try {
+                    const checkRes = await fetch(`/api/oauth/${item.auth_provider}/authorize`);
+                    const checkData = await checkRes.json();
+                    
+                    if (checkData.authorization_url || checkData.url) {
+                        const startOAuth = confirm(
+                            `Connect ${displayName} via Google Sign-In?\n\n` +
+                            `Click OK to open the Google authorization page and grant access to Gmail, Calendar, and Drive.\n\n` +
+                            `No API key is required — your account authorizes directly via OAuth.`
+                        );
+                        if (!startOAuth) return; // User cancelled cleanly
+                        
+                        const authUrl = checkData.authorization_url || checkData.url;
+                        window.location.href = authUrl;
+                        return;
+                    } else if (checkData.configured === false) {
+                        alert(`OAuth is not yet configured for ${displayName}:\n${checkData.message || ''}\n\nYou can enter an API Key / Token directly.`);
+                    }
+                } catch (err) {
+                    console.warn('OAuth check notice:', err);
+                }
+            }
+
+            // For services requiring API keys or Personal Access Tokens (or if OAuth isn't configured)
+            const tokenHints = {
+                'github': 'Enter GitHub Personal Access Token (ghp_... from github.com/settings/tokens):',
+                'notion': 'Enter Notion Integration Token (secret_... from notion.so/my-integrations):',
+                'slack': 'Enter Slack Bot Token (xoxb-... from api.slack.com/apps):',
+                'figma': 'Enter Figma Personal Access Token (from figma.com account settings):',
+                'google-workspace': 'Enter Google OAuth Access Token (or click Connect to sign in with Google):'
+            };
+
+            const hint = tokenHints[serviceId.toLowerCase()] || `Enter ${displayName} Access Token / API Key (or leave empty if none needed):`;
+            const token = prompt(hint);
+            if (token === null) return; // user cancelled
+
+            showLiveBanner(`Connecting ${displayName}...`);
+            try {
+                const res = await fetch('/api/integrations/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service_id: serviceId, token: token.trim() || undefined })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showLiveBanner(`✓ Connected ${displayName} (${data.tool_count || 0} tools available)`);
+                    setTimeout(hideLiveBanner, 4000);
+                    loadIntegrations();
+                    loadCatalog();
+                    updateBadgeCounts();
+                } else {
+                    alert(`Connection failed: ${data.detail || 'Error'}`);
+                    hideLiveBanner();
+                }
+            } catch (err) {
+                alert('Connection error: ' + err.message);
+                hideLiveBanner();
+            }
+        }
+
+        function connectServiceFromChat(serviceId) {
+            promptConnectCatalogService(serviceId);
+        }
+
+        async function disconnectService(serverName) {
+            if (!confirm(`Disconnect "${serverName}" and revoke stored credentials?`)) return;
+            showLiveBanner(`Disconnecting ${serverName}...`);
+            try {
+                const res = await fetch(`/api/integrations/${serverName}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showLiveBanner(`✓ Disconnected ${serverName}`);
+                    setTimeout(hideLiveBanner, 3000);
+                    loadIntegrations();
+                    loadCatalog();
+                    updateBadgeCounts();
+                } else {
+                    const data = await res.json();
+                    alert(`Failed to disconnect: ${data.detail || 'Error'}`);
+                    hideLiveBanner();
+                }
+            } catch (err) {
+                alert('Disconnect error: ' + err.message);
+                hideLiveBanner();
+            }
+        }
+
+        async function handleCustomServerSubmit(e) {
+            e.preventDefault();
+            const name = document.getElementById('customServerName').value.trim();
+            const displayName = document.getElementById('customServerDisplayName').value.trim();
+            const transport = document.getElementById('customServerTransport').value;
+            const command = document.getElementById('customServerCommand').value.trim();
+            const rawArgs = document.getElementById('customServerArgs').value.trim();
+            const url = document.getElementById('customServerUrl').value.trim();
+            const rawEnv = document.getElementById('customServerEnv').value.trim();
+
+            let args = [];
+            if (rawArgs) {
+                if (rawArgs.startsWith('[') && rawArgs.endsWith(']')) {
+                    try { args = JSON.parse(rawArgs); } catch (_) { args = rawArgs.split(/\s+/); }
+                } else {
+                    args = rawArgs.split(/\s+/);
+                }
+            }
+
+            let env = {};
+            if (rawEnv) {
+                try {
+                    env = JSON.parse(rawEnv);
+                } catch (e) {
+                    alert('Environment variables must be valid JSON object, e.g. {"TOKEN": "xyz"}');
+                    return;
+                }
+            }
+
+            const payload = {
+                name: name,
+                display_name: displayName,
+                transport: transport,
+                command: transport === 'stdio' ? command : undefined,
+                args: transport === 'stdio' ? args : [],
+                url: transport === 'sse' ? url : undefined,
+                env: env
+            };
+
+            showLiveBanner(`Registering custom MCP server "${displayName}"...`);
+            try {
+                const res = await fetch('/api/mcp/servers', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    showLiveBanner(`✓ Connected "${displayName}" (${data.tool_count || 0} tools discovered)`);
+                    setTimeout(hideLiveBanner, 4000);
+                    document.getElementById('formCustomServer').reset();
+                    switchIntegrationsTab('active');
+                    loadIntegrations();
+                    updateBadgeCounts();
+                } else {
+                    alert(`Server registration error: ${data.detail || 'Failed'}`);
+                    hideLiveBanner();
+                }
+            } catch (err) {
+                alert('Registration error: ' + err.message);
+                hideLiveBanner();
+            }
+        }
+
+        async function confirmPendingAction(actionId, btn) {
+            const card = document.getElementById(`action_card_${actionId}`);
+            if (btn) btn.disabled = true;
+            showLiveBanner('Executing confirmed action...');
+            try {
+                const res = await fetch(`/api/actions/${actionId}/confirm`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({})
+                });
+                const data = await res.json();
+                if (res.ok && data.status === 'executed') {
+                    if (card) {
+                        card.innerHTML = `
+                            <div style="color:var(--mint-500);font-weight:700;display:flex;align-items:center;gap:6px;">
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                                Action Executed Successfully
+                            </div>
+                            <pre style="background:var(--surface-bg);padding:10px;border-radius:var(--radius-md);font-size:0.78rem;overflow-x:auto;margin-top:6px;border:1px solid var(--border-subtle);">${escapeHtml(JSON.stringify(data.result, null, 2))}</pre>
+                        `;
+                    }
+                    showLiveBanner('✓ Action executed successfully');
+                    setTimeout(hideLiveBanner, 3500);
+                } else {
+                    if (card) {
+                        card.innerHTML = `<div style="color:#e53e3e;font-size:0.82rem;">⚠️ Execution failed: ${escapeHtml(data.detail || data.error || 'Failed')}</div>`;
+                    }
+                    hideLiveBanner();
+                }
+            } catch (err) {
+                if (card) card.innerHTML = `<div style="color:#e53e3e;font-size:0.82rem;">Error: ${escapeHtml(err.message)}</div>`;
+                hideLiveBanner();
+            }
+        }
+
+        async function cancelPendingAction(actionId, btn) {
+            const card = document.getElementById(`action_card_${actionId}`);
+            if (btn) btn.disabled = true;
+            try {
+                const res = await fetch(`/api/actions/${actionId}/cancel`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ reason: "User cancelled from chat card" })
+                });
+                if (res.ok && card) {
+                    card.innerHTML = `<div style="color:var(--text-muted);font-style:italic;font-size:0.82rem;">✕ Action cancelled by user.</div>`;
+                }
+            } catch (err) {
+                alert('Failed to cancel: ' + err.message);
+            }
+        }
+
+        function checkOAuthRedirect() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('oauth_success')) {
+                const prov = urlParams.get('provider') || 'service';
+                showLiveBanner(`✓ Successfully authorized ${prov.toUpperCase()}! Connecting MCP Server...`);
+                fetch('/api/integrations/connect', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ service_id: prov })
+                }).then(() => {
+                    loadIntegrations();
+                    updateBadgeCounts();
+                }).catch(() => {});
+                window.history.replaceState({}, document.title, window.location.pathname);
+                setTimeout(hideLiveBanner, 4000);
+            } else if (urlParams.get('oauth_error')) {
+                alert(`OAuth Error: ${urlParams.get('oauth_error')}`);
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
         }
     </script>

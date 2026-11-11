@@ -24,3 +24,4 @@ pillow==13.0.0
 pyinstaller==6.22.3
 pytest==9.1.1
 httpx==0.28.1
+mcp>=2.3.0

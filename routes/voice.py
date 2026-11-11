@@ -7,15 +7,15 @@ from sqlalchemy.orm import Session
 
 from core.config import settings
 from core.database import get_db
+from core.user import get_local_user
 from models import User
-from routes.auth import get_current_user
 from services import whisper_service
 
 router = APIRouter(prefix="/api/voice", tags=["Voice Assistant"])
 
 @router.get("/status")
 def get_voice_status(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_local_user)
 ):
     """Returns local Whisper speech-to-text engine configuration."""
     return {
@@ -30,7 +30,7 @@ def get_voice_status(
 async def transcribe_voice(
     audio: UploadFile = File(...),
     language: Optional[str] = Form(None),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_local_user)
 ):
     """
     Receives recorded microphone audio from the desktop frontend,
@@ -65,7 +65,7 @@ async def transcribe_voice(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Voice transcription failed: {e}")
     finally:
-        if temp_path.exists():
+        if os.path.exists(temp_path):
             try:
                 os.remove(temp_path)
             except Exception:

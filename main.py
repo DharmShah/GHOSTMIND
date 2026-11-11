@@ -9,15 +9,20 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 import ollama_service
+from core.config import settings
 from core.database import init_db, check_db_health, get_db
-from routes.auth import router as auth_router, get_optional_user
+from core.user import get_local_user
 from routes.conversations import router as conversations_router
 from routes.chat import router as chat_router
 from routes.documents import router as documents_router
 from routes.memories import router as memories_router
 from routes.voice import router as voice_router
 from routes.health import router as health_router
-from services import chat_service, auth_service
+from routes.integrations import router as integrations_router
+from routes.oauth import router as oauth_router
+from routes.mcp import router as mcp_router
+from routes.pending_actions import router as pending_actions_router
+from services import chat_service, web_search_service
 from models import User
 
 logging.basicConfig(level=logging.INFO)
@@ -32,13 +37,27 @@ async def lifespan(app: FastAPI):
         logger.info("Database initialized successfully.")
     except Exception as e:
         logger.warning(f"Database initialization notice: {e}")
+
+    # Ensure Ollama service is running when backend starts
+    try:
+        ollama_running, msg = ollama_service.ensure_ollama_running(max_wait_seconds=20.0)
+        logger.info(f"Ollama startup check: {msg}")
+    except Exception as e:
+        logger.warning(f"Ollama startup check notice: {e}")
+
     yield
+    logger.info("Disconnecting active MCP connections...")
+    try:
+        from mcp.connection_manager import connection_manager
+        await connection_manager.disconnect_all()
+    except Exception as e:
+        logger.warning(f"MCP shutdown notice: {e}")
     logger.info("GHOSTMIND server shutting down.")
 
 app = FastAPI(
     title="GHOSTMIND - Autonomous AI Operating System",
-    description="Local-first AI platform with PostgreSQL memory, RAG, voice, and Google authentication.",
-    version="2.0.0",
+    description="Local-first AI platform with PostgreSQL memory, RAG, voice, and live web search.",
+    version="2.1.0",
     lifespan=lifespan
 )
 
@@ -77,18 +96,25 @@ def make_no_cache_response(filepath: str, media_type: str = None) -> FileRespons
     resp.headers["Expires"] = "0"
     return resp
 
-# Mount API Routers
-app.include_router(auth_router)
+# Mount API Routers (Zero-Auth, Single-User Architecture)
 app.include_router(conversations_router)
 app.include_router(chat_router)
 app.include_router(documents_router)
 app.include_router(memories_router)
 app.include_router(voice_router)
 app.include_router(health_router)
+app.include_router(integrations_router)
+app.include_router(oauth_router)
+app.include_router(mcp_router)
+app.include_router(pending_actions_router)
 
-# Mount loopback OAuth redirect route
-from routes.auth import google_oauth_redirect_callback
-app.add_api_route("/auth/google/callback", google_oauth_redirect_callback, methods=["GET"])
+# Google OAuth loopback compatibility redirect
+@app.get("/auth/google/callback")
+async def google_oauth_redirect_compat(request: Request):
+    from fastapi.responses import RedirectResponse
+    query_str = str(request.url.query)
+    target = f"/api/oauth/callback?{query_str}" if query_str else "/api/oauth/callback"
+    return RedirectResponse(url=target)
 
 # Static and Webview Endpoints
 @app.get("/")
@@ -122,13 +148,35 @@ def get_style_css():
 @app.get("/status")
 @app.get("/api/status")
 def status():
-    """Diagnostic endpoint checking Ollama and PostgreSQL readiness."""
+    """Diagnostic endpoint checking Ollama, PostgreSQL, and internet readiness."""
     ollama_ready = ollama_service.check_system_readiness()
     db_health = check_db_health()
+    internet_online = web_search_service.is_internet_available()
     return {
         **ollama_ready,
-        "database": db_health
+        "database": db_health,
+        "internet_connected": internet_online
     }
+
+@app.get("/api/settings")
+def get_platform_settings():
+    """Returns current active platform generation parameters."""
+    return {
+        "model": settings.OLLAMA_MODEL,
+        "temperature": settings.DEFAULT_TEMPERATURE,
+        "max_output_tokens": settings.MAX_OUTPUT_TOKENS,
+        "context_window": settings.OLLAMA_NUM_CTX,
+        "max_recent_messages": settings.MAX_RECENT_MESSAGES,
+        "web_search_enabled": settings.WEB_SEARCH_ENABLED,
+        "rag_similarity_threshold": settings.RAG_SIMILARITY_THRESHOLD,
+        "whisper_model_size": settings.WHISPER_MODEL_SIZE
+    }
+
+@app.post("/api/ollama/start")
+def start_ollama():
+    """Endpoint to explicitly trigger Ollama startup if requested by frontend."""
+    running, msg = ollama_service.ensure_ollama_running(max_wait_seconds=25.0)
+    return {"running": running, "message": msg}
 
 class LegacyChatRequest(BaseModel):
     message: str
@@ -136,17 +184,10 @@ class LegacyChatRequest(BaseModel):
 @app.post("/chat")
 def legacy_chat(
     request: LegacyChatRequest,
-    current_user: User | None = Depends(get_optional_user),
+    current_user: User = Depends(get_local_user),
     db: Session = Depends(get_db)
 ):
-    """Backwards-compatible chat endpoint executing full RAG and memory pipeline."""
-    if not current_user:
-        current_user = auth_service.get_or_create_user(
-            db=db,
-            google_sub="local_legacy_user_sub",
-            email="local@ghostmind.local",
-            display_name="GHOSTMIND User"
-        )
+    """Backwards-compatible chat endpoint executing full RAG, Web Search, and memory pipeline."""
     result = chat_service.execute_chat_turn(
         db=db,
         user=current_user,

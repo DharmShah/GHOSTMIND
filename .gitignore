@@ -27,5 +27,9 @@ venv*/
 # Logs and databases
 *.log
 pastel_ai.log
+# Local uploads and cached models
+upload/
+uploads/
+
 # Operating System files
 Thumbs.db

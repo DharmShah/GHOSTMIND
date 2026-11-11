@@ -1,4 +1,4 @@
-﻿import os
+import os
 import sys
 import time
 import socket
@@ -61,6 +61,26 @@ def handle_exception(exc_type, exc_value, exc_traceback):
 sys.excepthook = handle_exception
 threading.excepthook = lambda args: log(f"THREAD EXCEPTION in {args.thread.name}:\n{args.exc_type}: {args.exc_value}")
 
+# Named Mutex for Windows Single-Instance Guard
+_INSTANCE_MUTEX = None
+
+def acquire_single_instance_lock():
+    """Ensure only one instance of GHOSTMIND runs at a time on Windows."""
+    global _INSTANCE_MUTEX
+    if sys.platform != "win32":
+        return True
+    try:
+        import ctypes
+        kernel32 = ctypes.windll.kernel32
+        _INSTANCE_MUTEX = kernel32.CreateMutexW(None, False, "Global\\GhostMindSingleInstanceMutex_v2")
+        ERROR_ALREADY_EXISTS = 183
+        if kernel32.GetLastError() == ERROR_ALREADY_EXISTS:
+            return False
+        return True
+    except Exception as e:
+        log(f"Single-instance check notice: {e}")
+        return True
+
 import uvicorn
 import ollama_service
 from main import app, get_resource_path
@@ -111,7 +131,7 @@ class UvicornServer(threading.Thread):
         self.server.should_exit = True
 
 
-def wait_for_server(url, max_seconds=10.0):
+def wait_for_server(url, max_seconds=15.0):
     """Poll the backend server until it responds or times out."""
     start = time.time()
     attempt = 0
@@ -132,10 +152,19 @@ def main():
     log("      GHOSTMIND Desktop Chatbot (Qwen 2.5 3B)")
     log("=" * 60)
 
-    # 1. Check and start local Ollama service safely
-    log("[1/4] Checking local Ollama service...")
+    # 0. Single-Instance Check
+    if not acquire_single_instance_lock():
+        log("NOTICE: GHOSTMIND is already running in another window or background process.")
+        # If the existing server is responsive, focus/open browser
+        if wait_for_server("http://127.0.0.1:8000", max_seconds=2.0):
+            log("Activating active session in browser: http://127.0.0.1:8000")
+            webbrowser.open("http://127.0.0.1:8000")
+        sys.exit(0)
+
+    # 1. Check and start local Ollama service automatically
+    log("[1/4] Ensuring local Ollama service is running...")
     try:
-        running, msg = ollama_service.ensure_ollama_running(max_wait_seconds=6.0)
+        running, msg = ollama_service.ensure_ollama_running(max_wait_seconds=25.0)
         if running:
             log(f"      OK: {msg}")
         else:
@@ -146,9 +175,9 @@ def main():
     # 2. Check if required model is available
     log("[2/4] Verifying local model 'qwen2.5:3b'...")
     try:
-        model_ready = ollama_service.is_model_installed("qwen2.5:3b")
+        model_ready = ollama_service.is_model_installed("qwen2.5:3b", timeout=4.0)
         if model_ready:
-            log("      OK: 'qwen2.5:3b' is installed locally.")
+            log("      OK: 'qwen2.5:3b' is installed and ready.")
         else:
             log("      WARNING: Model 'qwen2.5:3b' is not installed locally.")
             log("      (Chatbot will display a guidance banner to run 'ollama run qwen2.5:3b')")
@@ -163,8 +192,9 @@ def main():
 
     app_url = f"http://127.0.0.1:{port}"
     log(f"Waiting for backend to become ready at {app_url}...")
-    if not wait_for_server(app_url, max_seconds=12.0):
+    if not wait_for_server(app_url, max_seconds=15.0):
         log("      ERROR: Server failed to start in time.")
+        server.stop()
         sys.exit(1)
     log("      Backend is online and ready.")
 
@@ -228,4 +258,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

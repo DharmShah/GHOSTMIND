@@ -1,4 +1,4 @@
-﻿import uuid
+import uuid
 from datetime import datetime, timezone
 from sqlalchemy import (
     Column, String, Text, Boolean, Integer, DateTime, ForeignKey, Index
@@ -140,3 +140,69 @@ class BackgroundJob(Base):
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 
     user = relationship("User", back_populates="jobs")
+
+class IntegrationCredential(Base):
+    __tablename__ = "integration_credentials"
+
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    provider = Column(String(50), nullable=False, index=True)  # google, github, figma, slack, notion
+    service_name = Column(String(100), nullable=False, index=True)
+    server_id = Column(String(100), nullable=True)
+    encrypted_access_token = Column(Text, nullable=True)
+    encrypted_refresh_token = Column(Text, nullable=True)
+    encrypted_client_secret = Column(Text, nullable=True)
+    granted_scopes = Column(Text, nullable=True)  # JSON array string
+    token_expiry = Column(DateTime(timezone=True), nullable=True)
+    connection_status = Column(String(50), default="connected", nullable=False, index=True)
+    account_identifier = Column(String(255), nullable=True)  # email, username
+    metadata_json = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    user = relationship("User")
+
+class MCPServerConfig(Base):
+    __tablename__ = "mcp_server_configs"
+
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    name = Column(String(100), nullable=False, index=True)
+    display_name = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    transport = Column(String(50), default="stdio", nullable=False)
+    command = Column(String(255), nullable=True)
+    args_json = Column(Text, nullable=True)
+    env_json = Column(Text, nullable=True)
+    url = Column(String(512), nullable=True)
+    status = Column(String(50), default="installed", nullable=False, index=True)
+    is_enabled = Column(Boolean, default=True, nullable=False)
+    tools_cache_json = Column(Text, nullable=True)
+    last_connected_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
+
+    user = relationship("User")
+
+class PendingAction(Base):
+    __tablename__ = "pending_actions"
+
+    id = Column(PG_UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(PG_UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    conversation_id = Column(PG_UUID(as_uuid=True), ForeignKey("conversations.id", ondelete="SET NULL"), nullable=True, index=True)
+    server_name = Column(String(100), nullable=False, index=True)
+    tool_name = Column(String(100), nullable=False)
+    action_type = Column(String(50), default="write", nullable=False)
+    title = Column(String(255), nullable=False)
+    description = Column(Text, nullable=True)
+    parameters_json = Column(Text, nullable=False)
+    status = Column(String(50), default="pending", nullable=False, index=True)  # pending, confirmed, executed, cancelled, expired, failed
+    result_json = Column(Text, nullable=True)
+    error_message = Column(Text, nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    executed_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
+
+    user = relationship("User")
+    conversation = relationship("Conversation")
+

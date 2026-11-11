@@ -2,15 +2,16 @@ import os
 import io
 import uuid
 import pytest
-from unittest.mock import patch
+from unittest.mock import patch, MagicMock
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session
 
 from main import app
 from core.database import get_db, SessionLocal, init_db
-from core import security
-from models import User, Conversation, Message, Document, DocumentChunk, Memory, SessionRecord
-from services import auth_service, conversation_service, document_service, rag_service, memory_service, whisper_service
+from core.user import get_local_user, LOCAL_USER_ID
+from models import User, Conversation, Message, Document, DocumentChunk, Memory
+from services import conversation_service, document_service, rag_service, memory_service, whisper_service
+from services.web_search_service import web_search_service
 
 @pytest.fixture(scope="session", autouse=True)
 def setup_database():
@@ -33,102 +34,144 @@ def test_client():
 
 @pytest.fixture
 def mock_users(db_session: Session):
-    """Create two isolated test users for multi-tenant tests."""
+    """Create two isolated test users for multi-tenant and isolation tests."""
     unique_a = uuid.uuid4().hex[:8]
     unique_b = uuid.uuid4().hex[:8]
-    user_a = auth_service.get_or_create_user(
-        db=db_session,
-        google_sub=f"test_sub_a_{unique_a}",
-        email=f"user_a_{unique_a}@example.com",
+
+    user_a = User(
+        id=uuid.uuid4(),
+        google_sub=f"sub_{unique_a}",
+        email=f"user_a_{unique_a}@ghostmind.local",
         display_name="Test User Alpha",
         avatar_url="https://example.com/avatar_a.png"
     )
-    user_b = auth_service.get_or_create_user(
-        db=db_session,
-        google_sub=f"test_sub_b_{unique_b}",
-        email=f"user_b_{unique_b}@example.com",
+    user_b = User(
+        id=uuid.uuid4(),
+        google_sub=f"sub_{unique_b}",
+        email=f"user_b_{unique_b}@ghostmind.local",
         display_name="Test User Beta",
         avatar_url="https://example.com/avatar_b.png"
     )
+    db_session.add_all([user_a, user_b])
+    db_session.commit()
+    db_session.refresh(user_a)
+    db_session.refresh(user_b)
     return user_a, user_b
 
 
 # =====================================================================
-# 1. AUTHENTICATION & SESSION MANAGEMENT TESTS
+# 1. ZERO-AUTH ARCHITECTURE & LOCAL USER RESOLUTION TESTS
 # =====================================================================
 
-def test_auth_new_user_and_session_lifecycle(db_session: Session):
-    """Test user provisioning, session generation, verification, and revocation."""
-    uid = uuid.uuid4().hex[:8]
-    google_sub = f"g_sub_{uid}"
-    email = f"newuser_{uid}@example.com"
-    name = "New Google User"
-    
-    # 1. Auto-create user
-    user = auth_service.get_or_create_user(db_session, google_sub, email, name)
-    assert user.id is not None
-    assert user.google_sub == google_sub
-    assert user.email == email
-    assert user.display_name == name
+def test_local_user_provisioning_and_idempotence(db_session: Session):
+    """Test zero-auth user resolution, idempotence, and local desktop persistence."""
+    user1 = get_local_user(db_session)
+    assert user1 is not None
+    assert user1.id is not None
 
-    # 2. Existing user lookup returns same internal ID
-    user_again = auth_service.get_or_create_user(db_session, google_sub, email, name)
-    assert user_again.id == user.id
-
-    # 3. Create cryptographically secure session
-    raw_token = auth_service.create_session(db_session, user.id)
-    assert len(raw_token) >= 32
-
-    # 4. Validate active session
-    validated_user = auth_service.authenticate_session(db_session, raw_token)
-    assert validated_user is not None
-    assert validated_user.id == user.id
-
-    # 5. Revoke session / Logout
-    auth_service.revoke_session(db_session, raw_token)
-    assert auth_service.authenticate_session(db_session, raw_token) is None
+    # Repeated calls must return the same active local user
+    user2 = get_local_user(db_session)
+    assert user2.id == user1.id
 
 
-def test_auth_endpoints_with_mocked_google(test_client: TestClient, db_session: Session):
-    """Test FastAPI OAuth endpoints including callback, cookie set, /api/auth/me, and logout."""
-    uid = uuid.uuid4().hex[:8]
-    test_email = f"google_{uid}@ghostmind.ai"
-    mock_payload = {
-        "sub": f"mock_sub_{uid}",
-        "email": test_email,
-        "name": "Ghostmind Tester",
-        "picture": "https://example.com/pic.jpg"
-    }
+def test_zero_auth_endpoints_access(test_client: TestClient):
+    """Ensure all core endpoints are accessible without login screens, tokens, or cookies."""
+    # 1. Conversations list
+    res_conv = test_client.get("/api/conversations")
+    assert res_conv.status_code == 200
+    assert isinstance(res_conv.json(), list)
 
-    with patch("routes.auth.verify_google_id_token", return_value=mock_payload):
-        # Callback with Google credential token
-        cb_res = test_client.post("/api/auth/google/callback", json={"credential": "mock_id_token_123"})
-        assert cb_res.status_code == 200
-        data = cb_res.json()
-        assert data["authenticated"] is True
-        assert data["user"]["email"] == test_email
+    # 2. Documents list
+    res_docs = test_client.get("/api/documents")
+    assert res_docs.status_code == 200
+    assert isinstance(res_docs.json(), list)
 
-        # Check session cookie is set
-        session_cookie = cb_res.cookies.get("ghostmind_session")
-        assert session_cookie is not None
+    # 3. Memories list
+    res_mems = test_client.get("/api/memories")
+    assert res_mems.status_code == 200
+    assert isinstance(res_mems.json(), list)
 
-        # Verify /api/auth/me with persistent cookie
-        me_res = test_client.get("/api/auth/me", cookies={"ghostmind_session": session_cookie})
-        assert me_res.status_code == 200
-        assert me_res.json()["user"]["email"] == test_email
+    # 4. Settings endpoint
+    res_settings = test_client.get("/api/settings")
+    assert res_settings.status_code == 200
+    settings_data = res_settings.json()
+    assert "temperature" in settings_data
+    assert "model" in settings_data
+    assert settings_data["model"] == "qwen2.5:3b"
 
-        # Logout revokes session cookie
-        logout_res = test_client.post("/api/auth/logout", cookies={"ghostmind_session": session_cookie})
-        assert logout_res.status_code == 200
-
-        # Subsequent /api/auth/me returns authenticated: False
-        me_after_res = test_client.get("/api/auth/me", cookies={"ghostmind_session": session_cookie})
-        assert me_after_res.status_code == 200
-        assert me_after_res.json()["authenticated"] is False
+    # 5. Create conversation with zero auth
+    res_create = test_client.post("/api/conversations", json={"title": "Zero Auth Workspace Test"})
+    assert res_create.status_code in (200, 201)
+    assert res_create.json()["title"] == "Zero Auth Workspace Test"
 
 
 # =====================================================================
-# 2. PERSISTENT CONVERSATIONS & USER ISOLATION TESTS
+# 2. INTELLIGENT WEB SEARCH & PROMPT ROUTING TESTS
+# =====================================================================
+
+def test_web_search_intelligent_routing():
+    """Verify smart routing: search real-time queries, skip code/local tasks."""
+    # Should NOT search: general coding, local explanation, PDF summary
+    assert web_search_service.should_search_web("Explain Python loops.") is False
+    assert web_search_service.should_search_web("Write a binary search in C++") is False
+    assert web_search_service.should_search_web("Summarize my uploaded PDF.") is False
+    assert web_search_service.should_search_web("Hello, how are you?") is False
+
+    # SHOULD search: temporal, latest developments, real-time knowledge, MCP
+    assert web_search_service.should_search_web("What are the latest developments in Generative AI?") is True
+    assert web_search_service.should_search_web("What is the latest version of LangChain?") is True
+    assert web_search_service.should_search_web("What is MCP in Claude?") is True
+    assert web_search_service.should_search_web("Current weather in Tokyo") is True
+
+
+# =====================================================================
+# 3. CHAT ENDPOINTS & STREAMING PIPELINE TESTS
+# =====================================================================
+
+def test_chat_endpoints_streaming_and_sync(test_client: TestClient):
+    """Test /api/chat and /api/chat/stream endpoints with mocked LLM generation."""
+    with patch("services.chat_service.execute_chat_turn") as mock_sync, \
+         patch("services.chat_service.execute_chat_turn_stream") as mock_stream:
+
+        mock_sync.return_value = {
+            "conversation_id": "test-uuid-1",
+            "title": "New Chat",
+            "response": "Hello! I am GHOSTMIND.",
+            "sources": [],
+            "memories": []
+        }
+
+        # 1. Sync chat
+        sync_res = test_client.post("/api/chat", json={
+            "message": "Hello test",
+            "temperature": 0.7,
+            "enable_web_search": False,
+            "enable_rag": False
+        })
+        assert sync_res.status_code == 200
+        sync_data = sync_res.json()
+        assert sync_data["response"] == "Hello! I am GHOSTMIND."
+
+        # 2. Stream chat (SSE)
+        async def fake_stream_generator(*args, **kwargs):
+            yield 'data: {"type": "start", "conversation_id": "test-uuid-1"}\n\n'
+            yield 'data: {"type": "delta", "text": "Streaming test"}\n\n'
+            yield 'data: {"type": "done", "content": "Streaming test", "sources": []}\n\n'
+
+        mock_stream.side_effect = fake_stream_generator
+
+        stream_res = test_client.post("/api/chat/stream", json={
+            "message": "Hello stream test",
+            "temperature": 0.7
+        })
+        assert stream_res.status_code == 200
+        assert "text/event-stream" in stream_res.headers.get("content-type", "")
+        content_text = stream_res.text
+        assert "Streaming test" in content_text
+
+
+# =====================================================================
+# 4. PERSISTENT CONVERSATIONS & USER ISOLATION TESTS
 # =====================================================================
 
 def test_conversation_crud_and_cross_user_isolation(db_session: Session, mock_users):
@@ -171,7 +214,7 @@ def test_conversation_crud_and_cross_user_isolation(db_session: Session, mock_us
 
 
 # =====================================================================
-# 3. DOCUMENTS, LOCAL EMBEDDINGS & RAG TESTS
+# 4. DOCUMENTS, LOCAL EMBEDDINGS & RAG TESTS
 # =====================================================================
 
 def test_document_ingestion_and_rag_isolation(db_session: Session, mock_users):
@@ -230,7 +273,7 @@ def test_document_ingestion_and_rag_isolation(db_session: Session, mock_users):
 
 
 # =====================================================================
-# 4. PERSONALIZED LONG-TERM MEMORY TESTS
+# 5. PERSONALIZED LONG-TERM MEMORY & CONTEXT BOUNDING
 # =====================================================================
 
 def test_long_term_memory_and_bounded_context(db_session: Session, mock_users):
@@ -260,29 +303,25 @@ def test_long_term_memory_and_bounded_context(db_session: Session, mock_users):
     user_b_mems = memory_service.list_memories_for_user(db_session, user_b.id)
     assert not any("FastAPI" in m.memory_text for m in user_b_mems)
 
-    # 5. Context assembly respects token limits and includes memories
+    # 5. Context assembly respects token limits and includes relevant memories
     messages_payload, memory_snippets = memory_service.build_bounded_context(
         db=db_session,
         user_id=user_a.id,
         conversation_id=convo.id,
-        current_prompt="Help me write a new API endpoint"
+        current_prompt="Help me write a new API endpoint using FastAPI"
     )
     assert len(messages_payload) > 0
-    assert any("FastAPI" in s or "Pegasus" in s for s in memory_snippets)
+    assert any("FastAPI" in s for s in memory_snippets)
 
 
 # =====================================================================
-# 5. LOCAL WHISPER VOICE TESTS
+# 6. LOCAL WHISPER VOICE TESTS
 # =====================================================================
 
-def test_whisper_voice_endpoint(test_client: TestClient, db_session: Session, mock_users):
-    """Test voice status endpoint and input validation for local transcription."""
-    user_a, _ = mock_users
-    token = auth_service.create_session(db_session, user_a.id)
-    cookies = {"ghostmind_session": token}
-
+def test_whisper_voice_endpoint(test_client: TestClient):
+    """Test voice status endpoint and input validation for local transcription without auth."""
     # Status check
-    res = test_client.get("/api/voice/status", cookies=cookies)
+    res = test_client.get("/api/voice/status")
     assert res.status_code == 200
     data = res.json()
     assert data["engine"] == "faster-whisper"
@@ -294,15 +333,14 @@ def test_whisper_voice_endpoint(test_client: TestClient, db_session: Session, mo
     empty_audio.name = "empty.wav"
     transcribe_res = test_client.post(
         "/api/voice/transcribe",
-        files={"audio": ("empty.wav", empty_audio, "audio/wav")},
-        cookies=cookies
+        files={"audio": ("empty.wav", empty_audio, "audio/wav")}
     )
     assert transcribe_res.status_code == 400
     assert "empty" in transcribe_res.json()["detail"].lower()
 
 
 # =====================================================================
-# 6. SYSTEM HEALTH & DIAGNOSTIC RESILIENCE TESTS
+# 7. SYSTEM HEALTH & DIAGNOSTIC RESILIENCE TESTS
 # =====================================================================
 
 def test_health_and_status_endpoints(test_client: TestClient):

@@ -1,12 +1,12 @@
 import uuid
-from typing import List, Optional
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status
 from sqlalchemy.orm import Session
 from sqlalchemy import select, func, desc
 
 from core.database import get_db
+from core.user import get_local_user
 from models import User, Document, DocumentChunk
-from routes.conversations import resolve_active_user
 from schemas.document import DocumentSummarySchema, DocumentUploadResponse
 from services import document_service
 
@@ -14,10 +14,10 @@ router = APIRouter(prefix="/api/documents", tags=["Documents & RAG"])
 
 @router.get("", response_model=List[DocumentSummarySchema])
 def list_user_documents(
-    current_user: User = Depends(resolve_active_user),
+    current_user: User = Depends(get_local_user),
     db: Session = Depends(get_db)
 ):
-    """Lists all uploaded documents for the authenticated user."""
+    """Lists all uploaded documents for the local user."""
     docs = db.scalars(
         select(Document)
         .where(Document.user_id == current_user.id)
@@ -45,7 +45,7 @@ def list_user_documents(
 @router.post("/upload", response_model=DocumentUploadResponse, status_code=status.HTTP_201_CREATED)
 async def upload_document(
     file: UploadFile = File(...),
-    current_user: User = Depends(resolve_active_user),
+    current_user: User = Depends(get_local_user),
     db: Session = Depends(get_db)
 ):
     """Uploads, validates, extracts text, embeds, and indexes a document for local RAG."""
@@ -92,7 +92,7 @@ async def upload_document(
 @router.delete("/{document_id}")
 def delete_document(
     document_id: uuid.UUID,
-    current_user: User = Depends(resolve_active_user),
+    current_user: User = Depends(get_local_user),
     db: Session = Depends(get_db)
 ):
     """Deletes a document and all associated chunks from RAG index."""
@@ -102,5 +102,5 @@ def delete_document(
         document_id=document_id
     )
     if not success:
-        raise HTTPException(status_code=404, detail="Document not found or access denied.")
+        raise HTTPException(status_code=404, detail="Document not found.")
     return {"message": "Document and all vector embeddings deleted successfully."}
