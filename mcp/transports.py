@@ -4,6 +4,7 @@ import json
 import uuid
 import shutil
 import asyncio
+import subprocess
 import logging
 from abc import ABC, abstractmethod
 from typing import Dict, Any, Optional, List
@@ -87,6 +88,10 @@ class StdioTransport(BaseTransport):
                         executable = candidate
                         break
 
+        extra_kwargs = {}
+        if sys.platform == "win32":
+            extra_kwargs["creationflags"] = subprocess.CREATE_NO_WINDOW
+
         try:
             self.process = await asyncio.create_subprocess_exec(
                 executable,
@@ -95,7 +100,8 @@ class StdioTransport(BaseTransport):
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
                 env=process_env,
-                cwd=self.cwd
+                cwd=self.cwd,
+                **extra_kwargs
             )
             self._is_running = True
             self._read_task = asyncio.create_task(self._reader_loop())

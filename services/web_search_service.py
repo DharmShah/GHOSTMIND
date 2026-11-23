@@ -58,72 +58,24 @@ def clean_search_query(query: str) -> str:
 
 def should_search_web(query: str, has_document_context: bool = False) -> bool:
     """
-    Intelligent prompt classification routing:
+    Intelligent prompt classification routing delegating to QueryClassifier.
     - Avoids searching for standard programming concepts (e.g., loops, algorithms, functions)
     - Avoids searching when document RAG context is explicitly requested
     - Searches for real-time/temporal queries, latest versions, current news, unknown acronyms,
       modern post-2024 AI tools, or explicit search commands.
     """
-    if has_document_context:
-        return False
-
-    cleaned = query.strip().lower()
-
-    # 1. Skip simple pleasantries and short chit-chat
-    skip_phrases = {
-        "hi", "hello", "hey", "hola", "sup", "howdy",
-        "good morning", "good afternoon", "good evening", "good night",
-        "how are you", "how are you doing", "what's up",
-        "thanks", "thank you", "thx", "bye", "goodbye", "see you",
-        "ok", "okay", "cool", "nice", "yes", "no", "sure", "clear"
-    }
-    if cleaned in skip_phrases or len(cleaned) < 3:
-        return False
-
-    # 2. Skip local document queries
-    doc_indicators = [
-        "in the pdf", "in my document", "in the file", "summarize my",
-        "uploaded file", "uploaded document", "attached document", "this document",
-        "uploaded pdf", "my pdf", "from the file"
-    ]
-    for d in doc_indicators:
-        if d in cleaned:
+    try:
+        from services.query_classifier import classify_query
+        classification = classify_query(query, has_document_context=has_document_context)
+        return classification.requires_web_search
+    except Exception:
+        # Fallback to local heuristic if import fails
+        if has_document_context:
             return False
-
-    # 3. Skip foundational programming / CS concepts that Qwen knows locally
-    local_coding_concepts = [
-        "python loop", "for loop", "while loop", "explain loop", "quicksort", "bubble sort",
-        "binary search", "linked list", "fibonacci", "what is recursion", "hello world",
-        "object oriented", "polymorphism", "inheritance", "regex", "sql query", "select from",
-        "write a function", "write a python", "write javascript", "css style", "html tag",
-        "how does a hashmap work", "time complexity", "big o", "rest api", "explain decorator"
-    ]
-    for pattern in local_coding_concepts:
-        if pattern in cleaned:
+        cleaned = query.strip().lower()
+        if len(cleaned) < 3:
             return False
-
-    # 4. Trigger search for temporal, real-time, or latest information
-    web_search_triggers = [
-        # Explicit search request
-        "search", "google", "look up", "find online", "browse",
-        # Temporal / current indicators
-        "latest", "recent", "today", "yesterday", "current", "news",
-        "update", "updates", "release", "releases", "version of", "pricing",
-        "weather", "stock", "who is the current", "who won", "what happened",
-        # Modern standards & post-cutoff developments
-        "mcp", "model context protocol", "deepseek", "claude 3.7", "gpt-4.5",
-        "gemini 2.0", "langchain 1.", "fastapi 0.1", "qwen 2.5", "qwen3"
-    ]
-    for trigger in web_search_triggers:
-        if trigger in cleaned:
-            return True
-
-    # 5. Question forms asking for specific external facts
-    if cleaned.startswith(("who is ", "where is ", "when was ", "when is ", "how much is ", "what is the price ")):
-        return True
-
-    # Default: do not search unless a trigger matches
-    return False
+        return any(t in cleaned for t in ["search", "latest", "recent", "today", "news", "version", "mcp"])
 
 
 def search_web(query: str, max_results: int = 3, timeout: float = 4.0) -> List[Dict[str, str]]:
@@ -149,6 +101,7 @@ def search_web(query: str, max_results: int = 3, timeout: float = 4.0) -> List[D
         snippets = re.findall(r'<a[^>]+class="result__snippet"[^>]*>(.*?)</a>', html, re.DOTALL)
         urls = re.findall(r'<a[^>]+class="result__url"[^>]*>(.*?)</a>', html, re.DOTALL)
         titles = re.findall(r'<a[^>]+class="result__a"[^>]*>(.*?)</a>', html, re.DOTALL)
+        hrefs = re.findall(r'<a[^>]+class="result__a"[^>]+href="([^"]+)"', html, re.DOTALL)
 
         results = []
         seen_domains = set()
@@ -158,8 +111,19 @@ def search_web(query: str, max_results: int = 3, timeout: float = 4.0) -> List[D
             raw_url = re.sub(r'<[^>]+>', '', urls[i]).strip() if i < len(urls) else ""
             raw_title = re.sub(r'<[^>]+>', '', titles[i]).strip() if i < len(titles) else ""
 
+            # Check if href has real destination URL via uddg parameter
+            real_url = ""
+            if i < len(hrefs):
+                h = hrefs[i]
+                if "uddg=" in h:
+                    try:
+                        parsed_qs = urllib.parse.parse_qs(urllib.parse.urlparse(h).query)
+                        real_url = parsed_qs.get("uddg", [""])[0]
+                    except Exception:
+                        real_url = ""
+
             clean_snippet = html_lib.unescape(raw_snippet)
-            clean_url = html_lib.unescape(raw_url)
+            clean_url = html_lib.unescape(real_url if real_url else raw_url)
             clean_title = html_lib.unescape(raw_title)
 
             # Clean leading/trailing junk
@@ -169,10 +133,10 @@ def search_web(query: str, max_results: int = 3, timeout: float = 4.0) -> List[D
                 continue
 
             # Extract domain for deduplication
-            domain = clean_url.split('/')[0].lower() if clean_url else str(i)
-            if domain in seen_domains:
+            domain_part = clean_url.replace("https://", "").replace("http://", "").split('/')[0].lower() if clean_url else str(i)
+            if domain_part in seen_domains:
                 continue
-            seen_domains.add(domain)
+            seen_domains.add(domain_part)
 
             results.append({
                 "title": clean_title,

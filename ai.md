@@ -240,6 +240,26 @@ To safeguard user data and prevent unintended external modifications:
   5. Refined the connection UX in `index.html` to clearly distinguish OAuth 2.0 automatic browser authorization from API key entry (e.g. GitHub PAT, Notion Integration Secret), avoiding misleading prompts.
   6. Added automatic latest-message resolution and full body extraction in `google_workspace_server.py` so requests like "read my last mail" gracefully fetch the latest message without failing on `400: Invalid id value`.
 
+### Issue 7: Reliable Hybrid AI Knowledge & Internet Research Architecture
+- **Cause**: The local Qwen 2.5 3B model (with knowledge cutoff around 2024) required reliable access to current technical information, real-time documentation, and version releases without hallucinating external facts, URLs, or invention of dates.
+- **Fix**:
+  1. **Query Understanding & Classification (`services/query_classifier.py`)**: Classifies queries into 6 categories (`GENERAL_KNOWLEDGE`, `LATEST_INFO`, `TIME_SENSITIVE`, `RESEARCH_COMPARISON`, `PERSONAL_PROJECT_CONTEXT`, `MIXED`). Routes general concepts to local model only and reserves internet search for temporal/latest technical needs.
+  2. **Page Content Retrieval & Sanitization (`services/page_retrieval_service.py`)**: Implemented `LightweightHTMLStripper` using standard library `html.parser`, zero-dependency prompt injection containment (stripping instruction overrides, fake role changes, tool invocation tokens), domain authority scoring, and publication date extraction.
+  3. **Multi-Source Corroboration (`services/source_verification_service.py`)**: Verifies external claims across independent domains, detects conflicting numbers/versions, and yields confidence states (`Verified`, `Partially Verified`, `Unverified`).
+  4. **Evidence Packaging (`services/evidence_service.py`)**: Extracts discrete claims and packages research inside `<<<UNTRUSTED_EXTERNAL_EVIDENCE>>>` with strict grounding rules.
+  5. **Streaming Research Agent (`services/research_agent.py`)**: Yields real-time stage progress updates (`Planning research...`, `Searching web...`, `Reading sources...`, `Verifying evidence...`, `Generating grounded response...`) to SSE chat stream.
+  6. **Answer Validation & Citation Integrity (`services/answer_validation_service.py`)**: Strips hallucinated external URLs, normalizes inline citations, determines Knowledge Source Badges (`🧠 Local Knowledge`, `🌐 Internet Research`, `⚡ Hybrid Research`), and formats sources for collapsible UI drawer.
+  7. **Frontend Evidence UI (`index.html` & `style.css`)**: Live progress status pill, pastel Knowledge Badges, and collapsible Evidence Sources drawer with direct links, domain chips, publication dates, and previews.
+
+### Issue 8: Native Figma MCP Server & Node/npm Process Isolation
+- **Cause**: The external npm package `figma-developer-mcp` crashed on Node.js v24 due to a broken ESM dependency (`@posthog/core`), causing an empty black command prompt window (`npm exec figma-developer`) to open and hang on Windows, timing out after 20.0s (`Connection to MCP server 'figma' failed: MCP request 'initialize' timed out after 20.0s`).
+- **Fix**:
+  1. Developed a 100% native Python JSON-RPC 2.0 MCP server (`mcp/servers/figma_server.py`) using official Figma REST APIs (`/v1/files`, `/v1/nodes`, `/v1/comments`, `/v1/images`, `/v1/components`, `/v1/styles`, `/v1/me`), running directly via Python with zero Node.js/npm dependencies.
+  2. Updated `mcp/registry.py` to configure Figma with `default_command="python"` and `default_args=["-m", "mcp.servers.figma_server"]`.
+  3. Added `creationflags=subprocess.CREATE_NO_WINDOW` on Windows in `mcp/transports.py` to completely suppress subprocess terminal windows from flashing or stealing focus.
+  4. Enhanced `mcp/manager.py` to automatically upgrade persisted catalog servers to the latest server executable definition.
+  5. Added comprehensive automated test `test_figma_native_mcp_connection` verifying immediate handshake and tool registration.
+
 ---
 
 ## 7. Operational Commands
@@ -258,8 +278,11 @@ venv\Scripts\python.exe make_shortcut.py
 
 ### Running Automated Verification Tests
 ```cmd
-# Run complete test suite (32 tests):
+# Run complete test suite (46 tests: platform, MCP ecosystem, hybrid research):
 venv\Scripts\python.exe -m pytest tests/ -v
+
+# Run Hybrid Research & Knowledge tests only:
+venv\Scripts\python.exe -m pytest tests/test_hybrid_research.py -v
 
 # Run MCP ecosystem tests only:
 venv\Scripts\python.exe -m pytest tests/test_mcp_ecosystem.py -v

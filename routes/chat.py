@@ -26,6 +26,8 @@ class ChatTurnResponse(BaseModel):
     response: str
     sources: List[Dict[str, Any]] = []
     memories: List[str] = []
+    knowledge_source_badge: Optional[str] = None
+    verification_status: Optional[str] = None
 
 @router.post("", response_model=ChatTurnResponse)
 def chat_turn(

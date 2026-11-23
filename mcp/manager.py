@@ -73,13 +73,17 @@ class UniversalMCPManager:
                     auth_env[env_name] = creds["access_token"]
                     auth_env["BEARER_TOKEN"] = creds["access_token"]
 
+                catalog_item = self.registry.get_catalog_item(cfg.name)
+                final_command = catalog_item.default_command if catalog_item else cfg.command
+                final_args = catalog_item.default_args if catalog_item else args
+
                 spec = MCPServerSpec(
                     name=cfg.name,
                     display_name=cfg.display_name or cfg.name,
                     description=cfg.description or "",
                     transport=TransportType(cfg.transport),
-                    command=cfg.command,
-                    args=args,
+                    command=final_command,
+                    args=final_args,
                     env=auth_env,
                     url=cfg.url,
                     is_enabled=True,
@@ -216,6 +220,14 @@ class UniversalMCPManager:
             db.add(server_record)
         else:
             server_record.status = "connected"
+            server_record.display_name = spec.display_name
+            server_record.description = spec.description
+            server_record.transport = spec.transport.value
+            server_record.command = spec.command
+            server_record.args_json = json.dumps(spec.args)
+            server_record.env_json = json.dumps({k: "***" for k in spec.env.keys()})
+            server_record.url = spec.url
+            server_record.is_enabled = True
             server_record.tools_cache_json = json.dumps(tools_cache)
 
         db.commit()

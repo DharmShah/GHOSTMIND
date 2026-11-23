@@ -94,6 +94,8 @@ class IntegrationService:
         if token_to_use:
             env_var_name = ENV_TOKEN_MAP.get(item.name.lower(), "ACCESS_TOKEN")
             auth_env[env_var_name] = token_to_use
+            if item.name.lower() == "figma":
+                auth_env["FIGMA_PERSONAL_ACCESS_TOKEN"] = token_to_use
             # For servers using Bearer auth
             auth_env["BEARER_TOKEN"] = token_to_use
 

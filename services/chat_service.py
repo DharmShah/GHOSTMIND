@@ -12,6 +12,9 @@ from core.config import settings
 import ollama_service
 from models import User
 from services import conversation_service, rag_service, memory_service, web_search_service
+from services.query_classifier import classify_query, QueryCategory
+from services.research_agent import research_agent
+from services.answer_validation_service import validate_citations_and_format
 from mcp.manager import mcp_manager
 from mcp.tool_registry import tool_registry
 from mcp.models import ToolExecutionRequest, ConnectionStatus
@@ -35,7 +38,7 @@ def get_chat_model(temperature: Optional[float] = None) -> ChatOllama:
         timeout=settings.OLLAMA_TIMEOUT_SECONDS
     )
 
-def prepare_chat_turn(
+def prepare_chat_turn_stream(
     db: Session,
     user: User,
     message: str,
@@ -43,16 +46,17 @@ def prepare_chat_turn(
     document_ids: Optional[List[uuid.UUID]] = None,
     enable_web_search: bool = True,
     enable_rag: bool = True
-):
+) -> Generator[tuple, None, None]:
     """
-    Common preparation pipeline:
+    Common preparation pipeline generator:
     - Normalizes prompt
     - Retrieves or creates conversation
     - Persists user turn
     - Auto-extracts memory
     - Retrieves RAG chunks (if enabled)
-    - Runs live web search (if enabled, online, and deemed necessary)
-    - Assembles bounded context payload
+    - Runs hybrid internet research with real-time stage status updates
+    - Assembles bounded context payload with grounding instructions
+    Yields ("status", message) during research, and finally ("prep", prep_dict).
     """
     cleaned_prompt = message.strip()
     if not cleaned_prompt:
@@ -86,15 +90,18 @@ def prepare_chat_turn(
             content=cleaned_prompt
         )
 
-        return {
+        yield ("prep", {
             "conv": conv,
             "bounded_messages": [],
             "sources_metadata": [],
             "active_memory_texts": [],
             "web_search_performed": False,
             "rag_performed": False,
-            "direct_reply": discovery_reply
-        }
+            "direct_reply": discovery_reply,
+            "classification_category": "intent_discovery",
+            "verification_status": "Verified"
+        })
+        return
 
     # 2. Persist user message in PostgreSQL
     user_msg = conversation_service.add_message(
@@ -127,32 +134,34 @@ def prepare_chat_turn(
         )
         rag_prompt_block = rag_service.build_rag_context_prompt(retrieved_chunks)
 
-    # 5. Intelligent Live Web Search
+    # 5. Hybrid Research with Intelligent Query Classification
     internet_online = web_search_service.is_internet_available()
     web_prompt_block = ""
     web_sources = []
-
     has_doc_context = bool(document_ids or retrieved_chunks)
-    should_search = enable_web_search and internet_online and web_search_service.should_search_web(
-        cleaned_prompt, has_document_context=has_doc_context
-    )
 
-    if should_search:
-        try:
-            web_results = web_search_service.search_web(
-                cleaned_prompt, max_results=settings.WEB_SEARCH_MAX_RESULTS
-            )
-            if web_results:
-                web_prompt_block = web_search_service.format_web_search_prompt(web_results)
-                for r in web_results:
-                    web_sources.append({
-                        "filename": f"Web: {r.get('url') or r.get('title') or 'Live Search'}",
-                        "page": None,
-                        "score": 1.0,
-                        "preview": r["snippet"][:140] + "..." if len(r["snippet"]) > 140 else r["snippet"]
-                    })
-        except Exception as e:
-            logger.warning(f"Web search execution notice: {e}")
+    classification = classify_query(cleaned_prompt, has_document_context=has_doc_context)
+    verification_status = "Local Model Knowledge"
+
+    if enable_web_search and classification.requires_web_search:
+        for item_type, data in research_agent.execute_research_stream(cleaned_prompt, classification):
+            if item_type == "status":
+                yield ("status", data)
+            elif item_type == "result":
+                research_result = data
+                if research_result and research_result.get("success"):
+                    web_prompt_block = research_result.get("research_context", "")
+                    web_sources = research_result.get("sources", [])
+                    verif = research_result.get("verification")
+                    verification_status = verif.overall_status if verif else "Verified"
+                elif research_result and research_result.get("offline"):
+                    web_prompt_block = research_result.get("research_context", "")
+                    verification_status = "Offline"
+                else:
+                    verification_status = "Unverified"
+    elif enable_web_search and not classification.requires_web_search:
+        # Local knowledge sufficient for stable concepts (General Knowledge / Personal Context)
+        verification_status = "Local Knowledge Sufficient"
 
     # 6. Assemble bounded context
     bounded_messages, active_memory_texts = memory_service.build_bounded_context(
@@ -178,6 +187,9 @@ def prepare_chat_turn(
     sources_metadata = [
         {
             "filename": c["filename"],
+            "title": c["filename"],
+            "url": None,
+            "domain": "local_document",
             "page": c.get("page"),
             "score": c["score"],
             "preview": c["text"][:120] + "..." if len(c["text"]) > 120 else c["text"]
@@ -187,14 +199,41 @@ def prepare_chat_turn(
     if web_sources:
         sources_metadata.extend(web_sources)
 
-    return {
+    yield ("prep", {
         "conv": conv,
         "bounded_messages": bounded_messages,
         "sources_metadata": sources_metadata,
         "active_memory_texts": active_memory_texts,
         "web_search_performed": bool(web_sources),
-        "rag_performed": bool(retrieved_chunks)
-    }
+        "rag_performed": bool(retrieved_chunks),
+        "classification_category": classification.category.value,
+        "verification_status": verification_status,
+        "web_sources": web_sources
+    })
+
+def prepare_chat_turn(
+    db: Session,
+    user: User,
+    message: str,
+    conversation_id: Optional[uuid.UUID] = None,
+    document_ids: Optional[List[uuid.UUID]] = None,
+    enable_web_search: bool = True,
+    enable_rag: bool = True
+) -> Dict[str, Any]:
+    """Synchronous wrapper for prepare_chat_turn_stream."""
+    final_prep = None
+    for event_type, payload in prepare_chat_turn_stream(
+        db=db,
+        user=user,
+        message=message,
+        conversation_id=conversation_id,
+        document_ids=document_ids,
+        enable_web_search=enable_web_search,
+        enable_rag=enable_rag
+    ):
+        if event_type == "prep":
+            final_prep = payload
+    return final_prep or {}
 
 def extract_tool_invocation(text: str) -> Optional[Dict[str, Any]]:
     """Robustly extracts tool invocation JSON from various LLM formatting styles."""
@@ -342,7 +381,21 @@ def execute_chat_turn(
         assistant_reply = f"Sorry, I encountered an issue communicating with your local model: {e}"
 
     # Intercept tool calls or confirmation requests
-    assistant_reply = handle_tool_call_interception(assistant_reply, user, conv, db)
+    intercepted = handle_tool_call_interception(assistant_reply, user, conv, db)
+    badge = "Local Knowledge"
+    val_status = prep.get("verification_status", "Unverified")
+
+    if intercepted != assistant_reply:
+        assistant_reply = intercepted
+    else:
+        # Validate citations and format response
+        val_res = validate_citations_and_format(
+            raw_response=assistant_reply,
+            retrieved_sources=sources_metadata,
+            query_category=prep.get("classification_category")
+        )
+        assistant_reply = val_res["sanitized_response"]
+        badge = val_res["knowledge_source_badge"]
 
     # Persist assistant reply
     conversation_service.add_message(
@@ -351,7 +404,11 @@ def execute_chat_turn(
         conversation_id=conv.id,
         role="assistant",
         content=assistant_reply,
-        metadata={"sources": sources_metadata} if sources_metadata else None
+        metadata={
+            "sources": sources_metadata,
+            "knowledge_source_badge": badge,
+            "verification_status": val_status
+        } if sources_metadata or badge else None
     )
 
     db.refresh(conv)
@@ -361,7 +418,9 @@ def execute_chat_turn(
         "title": conv.title,
         "response": assistant_reply,
         "sources": sources_metadata,
-        "memories": active_memory_texts
+        "memories": active_memory_texts,
+        "knowledge_source_badge": badge,
+        "verification_status": val_status
     }
 
 def execute_chat_turn_stream(
@@ -375,7 +434,8 @@ def execute_chat_turn_stream(
     enable_rag: bool = True
 ) -> Generator[str, None, None]:
     """Streaming chat turn execution using Server-Sent Events (SSE)."""
-    prep = prepare_chat_turn(
+    prep = None
+    for event_type, payload in prepare_chat_turn_stream(
         db=db,
         user=user,
         message=message,
@@ -383,11 +443,20 @@ def execute_chat_turn_stream(
         document_ids=document_ids,
         enable_web_search=enable_web_search,
         enable_rag=enable_rag
-    )
+    ):
+        if event_type == "status":
+            yield f"data: {json.dumps({'type': 'status', 'message': payload})}\n\n"
+        elif event_type == "prep":
+            prep = payload
+
+    if not prep:
+        return
+
     conv = prep["conv"]
     bounded_messages = prep["bounded_messages"]
     sources_metadata = prep["sources_metadata"]
     active_memory_texts = prep["active_memory_texts"]
+    val_status = prep.get("verification_status", "Unverified")
 
     # Yield initial start event with metadata
     start_payload = {
@@ -397,7 +466,8 @@ def execute_chat_turn_stream(
         "sources": sources_metadata,
         "memories": active_memory_texts,
         "web_search_performed": prep.get("web_search_performed", False),
-        "rag_performed": prep.get("rag_performed", False)
+        "rag_performed": prep.get("rag_performed", False),
+        "verification_status": val_status
     }
     yield f"data: {json.dumps(start_payload)}\n\n"
 
@@ -417,7 +487,9 @@ def execute_chat_turn_stream(
             "conversation_id": str(conv.id),
             "title": conv.title,
             "response": direct_reply,
-            "sources": []
+            "sources": [],
+            "knowledge_source_badge": "Local Knowledge",
+            "verification_status": "Verified"
         }
         yield f"data: {json.dumps(done_payload)}\n\n"
         return
@@ -443,10 +515,15 @@ def execute_chat_turn_stream(
             "conversation_id": str(conv.id),
             "title": conv.title,
             "response": error_reply,
-            "sources": []
+            "sources": [],
+            "knowledge_source_badge": "Local Knowledge",
+            "verification_status": "Unavailable"
         }
         yield f"data: {json.dumps(done_payload)}\n\n"
         return
+
+    # Yield status that LLM generation is starting
+    yield f"data: {json.dumps({'type': 'status', 'message': 'Generating grounded response...'})}\n\n"
 
     # Stream from ChatOllama
     collected_tokens = []
@@ -467,9 +544,22 @@ def execute_chat_turn_stream(
 
     # Intercept tool calls
     intercepted = handle_tool_call_interception(full_response, user, conv, db)
+    badge = "Local Knowledge"
     if intercepted != full_response:
         full_response = intercepted
         yield f"data: {json.dumps({'type': 'replace', 'text': full_response})}\n\n"
+    else:
+        # Validate citations and clean hallucinations
+        val_res = validate_citations_and_format(
+            raw_response=full_response,
+            retrieved_sources=sources_metadata,
+            query_category=prep.get("classification_category")
+        )
+        sanitized = val_res["sanitized_response"]
+        badge = val_res["knowledge_source_badge"]
+        if sanitized != full_response:
+            full_response = sanitized
+            yield f"data: {json.dumps({'type': 'replace', 'text': full_response})}\n\n"
 
     # Persist assistant reply
     conversation_service.add_message(
@@ -478,7 +568,11 @@ def execute_chat_turn_stream(
         conversation_id=conv.id,
         role="assistant",
         content=full_response,
-        metadata={"sources": sources_metadata} if sources_metadata else None
+        metadata={
+            "sources": sources_metadata,
+            "knowledge_source_badge": badge,
+            "verification_status": val_status
+        } if sources_metadata or badge else None
     )
 
     db.refresh(conv)
@@ -489,6 +583,8 @@ def execute_chat_turn_stream(
         "title": conv.title,
         "response": full_response,
         "sources": sources_metadata,
+        "knowledge_source_badge": badge,
+        "verification_status": val_status,
         "web_search_performed": prep.get("web_search_performed", False),
         "rag_performed": prep.get("rag_performed", False)
     }

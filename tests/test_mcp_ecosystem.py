@@ -485,3 +485,21 @@ def test_api_pending_actions_endpoints(client: TestClient, db: Session, local_us
     # 3. Verify no longer pending
     db.refresh(action)
     assert action.status == "cancelled"
+
+
+def test_figma_native_mcp_connection(client: TestClient, db: Session, local_user: User):
+    """Verifies that Figma connects via native Python MCP server without external npm crashes."""
+    res = client.post("/api/integrations/connect", json={
+        "service_id": "figma",
+        "token": "figd_test_token_sample_123"
+    })
+    assert res.status_code == 200, res.text
+    data = res.json()
+    assert data["success"] is True
+    assert data["name"] == "figma"
+    assert data["status"] == "connected"
+    assert data["tool_count"] >= 7
+    tool_names = [t["name"] for t in data["tools"]]
+    assert "get_file" in tool_names
+    assert "get_comments" in tool_names
+

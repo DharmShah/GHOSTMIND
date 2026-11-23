@@ -765,7 +765,13 @@
 
                     if (data.messages && data.messages.length > 0) {
                         data.messages.forEach(m => {
-                            appendMessageUI(m.role, m.content, m.metadata?.sources);
+                            appendMessageUI(
+                                m.role,
+                                m.content,
+                                m.metadata?.sources,
+                                m.metadata?.knowledge_source_badge,
+                                m.metadata?.verification_status
+                            );
                         });
                     } else {
                         messagesContainer.appendChild(welcomeHero);
@@ -858,6 +864,10 @@
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
 
+                let streamSources = null;
+                let streamBadge = null;
+                let streamVerif = null;
+
                 const reader = response.body.getReader();
                 const decoder = new TextDecoder('utf-8');
                 let buffer = '';
@@ -877,10 +887,21 @@
                             try {
                                 const event = JSON.parse(jsonStr);
 
-                                if (event.type === 'start') {
+                                if (event.type === 'status') {
+                                    let statusPill = assistantCard.querySelector('.streaming-status-pill');
+                                    if (!statusPill) {
+                                        statusPill = document.createElement('div');
+                                        statusPill.className = 'streaming-status-pill';
+                                        assistantCard.insertBefore(statusPill, contentDiv);
+                                    }
+                                    statusPill.innerHTML = `<span>⏳ ${escapeHtml(event.message)}</span>`;
+                                    scrollToBottom();
+                                } else if (event.type === 'start') {
                                     activeConversationId = event.conversation_id;
                                     if (event.title) chatHeaderTitle.textContent = event.title;
                                     if (event.sources) streamSources = event.sources;
+                                    if (event.verification_status) streamVerif = event.verification_status;
+                                    if (event.knowledge_source_badge) streamBadge = event.knowledge_source_badge;
 
                                     if (event.web_search_performed) {
                                         showLiveBanner('🔍 DuckDuckGo live search results incorporated into response.');
@@ -890,6 +911,8 @@
                                         setTimeout(hideLiveBanner, 3500);
                                     }
                                 } else if (event.type === 'delta') {
+                                    const pill = assistantCard.querySelector('.streaming-status-pill');
+                                    if (pill) pill.remove();
                                     accumulatedText += event.text;
                                     contentDiv.innerHTML = renderMarkdown(accumulatedText);
                                     contentDiv.appendChild(cursor);
@@ -901,6 +924,10 @@
                                     scrollToBottom();
                                 } else if (event.type === 'done') {
                                     if (event.sources) streamSources = event.sources;
+                                    if (event.knowledge_source_badge) streamBadge = event.knowledge_source_badge;
+                                    if (event.verification_status) streamVerif = event.verification_status;
+                                    const pill = assistantCard.querySelector('.streaming-status-pill');
+                                    if (pill) pill.remove();
                                 }
                             } catch (e) {
                                 console.warn('SSE Parse notice:', e);
@@ -910,10 +937,12 @@
                 }
 
                 cursor.remove();
+                const leftoverPill = assistantCard.querySelector('.streaming-status-pill');
+                if (leftoverPill) leftoverPill.remove();
                 contentDiv.innerHTML = renderMarkdown(accumulatedText || "(No response generated)");
 
-                // Append Sources & Actions Ribbon
-                appendAssistantFooter(assistantCard, accumulatedText, streamSources);
+                // Append Sources & Actions Ribbon with Knowledge Badges
+                appendAssistantFooter(assistantCard, accumulatedText, streamSources, streamBadge, streamVerif);
                 scrollToBottom();
 
                 // Refresh conversation list to show new title
@@ -921,9 +950,11 @@
 
             } catch (err) {
                 cursor.remove();
+                const leftoverPill = assistantCard.querySelector('.streaming-status-pill');
+                if (leftoverPill) leftoverPill.remove();
                 if (err.name === 'AbortError') {
                     contentDiv.innerHTML = renderMarkdown(accumulatedText + "\n\n*(Generation stopped by user)*");
-                    appendAssistantFooter(assistantCard, accumulatedText, streamSources);
+                    appendAssistantFooter(assistantCard, accumulatedText, streamSources, streamBadge, streamVerif);
                 } else {
                     console.error('Streaming error, falling back to sync chat:', err);
                     contentDiv.innerHTML = `<span style="color:#e53e3e;">⚠️ Request notice: ${escapeHtml(err.message)}. Retrying with local Ollama...</span>`;
@@ -944,7 +975,7 @@
         }
 
         // 6. UI Message Rendering & Markdown Parser
-        function appendMessageUI(role, content, sources = null) {
+        function appendMessageUI(role, content, sources = null, badge = null, verif = null) {
             const row = document.createElement('div');
             row.className = `message-row ${role}`;
 
@@ -962,44 +993,81 @@
                 contentDiv.innerHTML = renderMarkdown(content);
                 card.appendChild(contentDiv);
 
-                appendAssistantFooter(card, content, sources);
+                appendAssistantFooter(card, content, sources, badge, verif);
                 row.appendChild(card);
             }
 
             messagesContainer.appendChild(row);
         }
 
-        function appendAssistantFooter(card, text, sources) {
-            // Knowledge Sources Ribbon
+        function appendAssistantFooter(card, text, sources, badge = null, verif = null) {
+            // Knowledge Source Badge Ribbon
+            const metaRibbon = document.createElement('div');
+            metaRibbon.className = 'meta-badge-ribbon';
+
+            const badgeSpan = document.createElement('span');
+            let badgeClass = 'local';
+            let badgeIcon = '🧠';
+            const badgeStr = badge || (sources && sources.length > 0 ? (sources.some(s => s.url || (s.filename && s.filename.startsWith('Web:'))) ? 'Internet Research' : 'Local Knowledge') : 'Local Knowledge');
+            if (badgeStr.includes('Internet') && badgeStr.includes('Local')) {
+                badgeClass = 'hybrid';
+                badgeIcon = '⚡';
+            } else if (badgeStr.includes('Internet')) {
+                badgeClass = 'web';
+                badgeIcon = '🌐';
+            }
+            badgeSpan.className = `knowledge-badge ${badgeClass}`;
+            badgeSpan.innerHTML = `${badgeIcon} ${escapeHtml(badgeStr)}`;
+            metaRibbon.appendChild(badgeSpan);
+
+            if (verif) {
+                const verifSpan = document.createElement('span');
+                let verifClass = 'verified';
+                if (verif.includes('Partial')) verifClass = 'partial';
+                else if (verif.includes('Unverified') || verif.includes('Offline')) verifClass = 'unverified';
+                verifSpan.className = `verif-badge ${verifClass}`;
+                verifSpan.innerHTML = `🛡️ ${escapeHtml(verif)}`;
+                metaRibbon.appendChild(verifSpan);
+            }
+            card.appendChild(metaRibbon);
+
+            // Evidence Sources Drawer
             if (sources && sources.length > 0) {
-                const ribbon = document.createElement('div');
-                ribbon.className = 'sources-ribbon';
+                const details = document.createElement('details');
+                details.className = 'evidence-sources-drawer';
+                const summary = document.createElement('summary');
+                summary.innerHTML = `<strong>📚 Evidence & Citations (${sources.length})</strong>`;
+                details.appendChild(summary);
 
-                const label = document.createElement('span');
-                label.className = 'sources-label';
-                label.textContent = 'Evidence:';
-                ribbon.appendChild(label);
-
-                sources.forEach(s => {
+                const list = document.createElement('div');
+                list.className = 'sources-card-list';
+                sources.forEach((s, idx) => {
+                    const item = document.createElement('div');
+                    item.className = 'source-evidence-card';
                     const isWeb = (s.filename && s.filename.startsWith('Web:')) || s.url;
-                    const chip = document.createElement('a');
-                    chip.className = `source-chip ${isWeb ? 'web' : 'doc'}`;
-                    chip.target = '_blank';
+                    let url = s.url || (s.filename && s.filename.startsWith('Web:') ? s.filename.replace(/^Web:\s*/, '') : null);
+                    if (url && !url.startsWith('http')) url = 'https://' + url;
+                    const title = s.title || s.filename || `Source [${idx + 1}]`;
+                    const domain = s.domain || (url ? url.split('/')[2] : 'local_doc');
+                    const pubDate = s.publication_date ? `Updated: ${escapeHtml(s.publication_date)}` : 'Date: Not specified';
+                    const auth = s.authority_score ? `Authority: ${(s.authority_score * 100).toFixed(0)}%` : '';
 
-                    let title = s.filename || 'Source';
-                    if (isWeb) {
-                        const cleanUrl = title.replace(/^Web:\s*/, '');
-                        chip.href = cleanUrl.startsWith('http') ? cleanUrl : `https://${cleanUrl}`;
-                        chip.innerHTML = `🌐 ${escapeHtml(cleanUrl.split('/')[0])}`;
-                    } else {
-                        chip.href = '#';
-                        chip.onclick = (e) => { e.preventDefault(); openModal('modalDocuments'); };
-                        const score = s.score ? ` (${(s.score * 100).toFixed(0)}%)` : '';
-                        chip.innerHTML = `📄 ${escapeHtml(title)}${score}`;
-                    }
-                    ribbon.appendChild(chip);
+                    item.innerHTML = `
+                        <div class="source-card-header">
+                            <span class="source-idx">[${idx + 1}]</span>
+                            ${url ? `<a href="${escapeHtml(url)}" target="_blank" rel="noopener" class="source-link"><strong>${escapeHtml(title)}</strong> ↗</a>` : `<strong>${escapeHtml(title)}</strong>`}
+                            <span class="source-domain-tag">${escapeHtml(domain)}</span>
+                        </div>
+                        <div class="source-card-meta">
+                            <span class="source-date">${pubDate}</span>
+                            ${auth ? `<span class="source-auth">${auth}</span>` : ''}
+                        </div>
+                        ${s.preview ? `<div class="source-preview">"${escapeHtml(s.preview)}"</div>` : ''}
+                    `;
+                    list.appendChild(item);
                 });
-                card.appendChild(ribbon);
+                details.appendChild(list);
+                card.appendChild(details);
             }
 
             // Message Actions Bar (Copy & Regenerate)
