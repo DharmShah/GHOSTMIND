@@ -7,6 +7,7 @@ from typing import List, Dict, Any, Optional
 
 _last_connectivity_check = 0.0
 _cached_internet_status = False
+_SEARCH_CACHE: Dict[str, Dict[str, Any]] = {}
 
 def is_internet_available(timeout: float = 1.5, force_refresh: bool = False) -> bool:
     """
@@ -78,13 +79,24 @@ def should_search_web(query: str, has_document_context: bool = False) -> bool:
         return any(t in cleaned for t in ["search", "latest", "recent", "today", "news", "version", "mcp"])
 
 
-def search_web(query: str, max_results: int = 3, timeout: float = 4.0) -> List[Dict[str, str]]:
+def search_web(
+    query: str,
+    max_results: int = 3,
+    timeout: float = 4.0,
+    cache_ttl_seconds: int = 0
+) -> List[Dict[str, str]]:
     """
     Executes a web search via DuckDuckGo HTML without external dependencies or API keys.
     Cleans, filters, and deduplicates results by URL.
+    Supports optional TTL caching (never serves expired entries).
     Returns: [{"title": ..., "snippet": ..., "url": ...}]
     """
     search_query = clean_search_query(query)
+    if cache_ttl_seconds > 0:
+        cached = _SEARCH_CACHE.get(search_query.lower())
+        if cached and (time.time() - cached["ts"] < cache_ttl_seconds):
+            return cached["results"][:max_results]
+
     url = "https://html.duckduckgo.com/html/?q=" + urllib.parse.quote(search_query)
 
     headers = {
@@ -146,6 +158,9 @@ def search_web(query: str, max_results: int = 3, timeout: float = 4.0) -> List[D
 
             if len(results) >= max_results:
                 break
+
+        if cache_ttl_seconds > 0 and results:
+            _SEARCH_CACHE[search_query.lower()] = {"ts": time.time(), "results": results}
 
         return results
     except Exception:

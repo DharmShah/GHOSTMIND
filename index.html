@@ -5,9 +5,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GHOSTMIND — Personal AI Operating System</title>
     <link rel="icon" type="image/png" href="app_icon.png">
-    <link rel="stylesheet" href="style.css">
+    <script>
+        (function() {
+            try {
+                const saved = localStorage.getItem('ghostmind_theme') || 'dark';
+                document.documentElement.setAttribute('data-theme', saved);
+            } catch (_) {}
+        })();
+    </script>
+    <link rel="stylesheet" href="/style.css?v=4.0">
 </head>
 <body>
+    <!-- Celebratory Confetti Canvas -->
+    <canvas id="confettiCanvas" style="position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:99999;"></canvas>
+
+    <!-- Mesmerizing Startup Splash Loader -->
+    <div class="app-splash-screen" id="appSplashScreen">
+        <div class="splash-aurora aurora-1"></div>
+        <div class="splash-aurora aurora-2"></div>
+        <div class="splash-card">
+            <div class="splash-orb-wrapper">
+                <div class="splash-orb-ring ring-1"></div>
+                <div class="splash-orb-ring ring-2"></div>
+                <div class="splash-orb-ring ring-3"></div>
+                <div class="splash-orb-core">
+                    <img src="app_icon.png" alt="GHOSTMIND Core">
+                </div>
+            </div>
+
+            <h1 class="splash-title">GHOSTMIND</h1>
+            <p class="splash-subtitle">LOCAL-FIRST AI OPERATING SYSTEM</p>
+
+            <div class="splash-steps-list">
+                <div class="splash-step" id="splashStep1">
+                    <div style="display:flex;align-items:center;">
+                        <span class="step-dot"></span>
+                        <span class="step-text">Connecting Local Database &amp; Memory</span>
+                    </div>
+                    <span class="step-badge" id="stepBadge1">Checking...</span>
+                </div>
+                <div class="splash-step" id="splashStep2">
+                    <div style="display:flex;align-items:center;">
+                        <span class="step-dot"></span>
+                        <span class="step-text">Waking Ollama &amp; Qwen 2.5 3B</span>
+                    </div>
+                    <span class="step-badge" id="stepBadge2">Pending...</span>
+                </div>
+                <div class="splash-step" id="splashStep3">
+                    <div style="display:flex;align-items:center;">
+                        <span class="step-dot"></span>
+                        <span class="step-text">Syncing Dynamic MCP Tools &amp; Web Bus</span>
+                    </div>
+                    <span class="step-badge" id="stepBadge3">Pending...</span>
+                </div>
+            </div>
+
+            <div class="splash-progress-track">
+                <div class="splash-progress-bar" id="splashProgressBar"></div>
+            </div>
+            <div class="splash-caption" id="splashCaption">Waking local neural engine...</div>
+        </div>
+    </div>
+
     <div class="app-container">
         <div class="workspace-frame">
             <!-- Left Collapsible Sidebar -->
@@ -22,8 +81,8 @@
                             <span>AI OS • Local Brain</span>
                         </div>
                     </div>
-                    <button class="btn-sidebar-collapse" id="btnCollapseSidebar" title="Collapse Sidebar">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <button class="btn-sidebar-collapse" id="btnCollapseSidebar" title="Collapse Sidebar" aria-label="Collapse Sidebar">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                             <polyline points="15 18 9 12 15 6"></polyline>
                         </svg>
                     </button>
@@ -118,8 +177,8 @@
             <main class="chat-workspace">
                 <header class="chat-header">
                     <div class="header-left">
-                        <button class="btn-toggle-sidebar" id="btnToggleSidebar" title="Toggle Sidebar">
-                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                        <button class="btn-toggle-sidebar" id="btnToggleSidebar" title="Toggle Sidebar" aria-label="Toggle Sidebar">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="3" y1="12" x2="21" y2="12"></line>
                                 <line x1="3" y1="6" x2="21" y2="6"></line>
                                 <line x1="3" y1="18" x2="21" y2="18"></line>
@@ -140,8 +199,24 @@
                             <span class="status-indicator-dot" id="modelDot"></span>
                             <span id="modelText">Ollama</span>
                         </div>
-                        <button class="header-action-btn" id="btnHeaderSettings" title="Workspace Settings">
-                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <button class="header-action-btn" id="btnThemeToggle" title="Toggle Theme (Dark / Light)" aria-label="Toggle Theme">
+                            <svg class="theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            <svg class="theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                        </button>
+                        <button class="header-action-btn" id="btnHeaderSettings" title="Workspace Settings" aria-label="Workspace Settings">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                                 <circle cx="12" cy="12" r="3"></circle>
                                 <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                             </svg>
@@ -162,41 +237,48 @@
                         <div class="welcome-logo-badge">
                             <img src="app_icon.png" alt="GHOSTMIND Orb">
                         </div>
-                        <h2 class="welcome-title">How can I assist your workflow today?</h2>
+                        <div class="welcome-tagline-badge">
+                            <span>✨ Local-First Neural OS</span>
+                        </div>
+                        <h2 class="welcome-title" id="dynamicGreeting">How can I assist your workflow today?</h2>
                         <p class="welcome-sub">
-                            GHOSTMIND runs 100% locally on Qwen 2.5 3B with persistent PostgreSQL memory, local document RAG, and intelligent real-time web search.
+                            GHOSTMIND runs 100% locally on <strong>Qwen 2.5 3B</strong> with encrypted long-term memory, local document RAG, and an autonomous Model Context Protocol (MCP) tool ecosystem.
                         </p>
                         <div class="suggestion-cards">
                             <div class="suggest-card" onclick="usePrompt('What is Model Context Protocol (MCP) in Claude?')">
-                                <div class="suggest-card-header">
-                                    <span>🌐</span>
-                                    <span>Real-Time Web Intelligence</span>
+                                <div class="suggest-card-top">
+                                    <span class="card-tag web">🌐 Real-Time Web</span>
+                                    <span class="card-arrow">↗</span>
                                 </div>
-                                <div class="suggest-card-sub">What is Model Context Protocol (MCP) in Claude?</div>
+                                <div class="suggest-card-title">Explore MCP Ecosystem</div>
+                                <div class="suggest-card-sub">What is Model Context Protocol (MCP) and how does it connect external tools?</div>
+                            </div>
+
+                            <div class="suggest-card" onclick="usePrompt('Create a mobile screen for iOS in Figma and in the mobile screen create a login page with SVG format')">
+                                <div class="suggest-card-top">
+                                    <span class="card-tag figma">🎨 Figma &amp; UI</span>
+                                    <span class="card-arrow">↗</span>
+                                </div>
+                                <div class="suggest-card-title">Design Mobile UI Screen</div>
+                                <div class="suggest-card-sub">Generate copy-pasteable SVG iOS login screen with gradients</div>
                             </div>
 
                             <div class="suggest-card" onclick="usePrompt('Explain Python asyncio queues and write a clean producer-consumer example with error handling.')">
-                                <div class="suggest-card-header">
-                                    <span>⚡</span>
-                                    <span>Direct Local Code Generation</span>
+                                <div class="suggest-card-top">
+                                    <span class="card-tag code">⚡ Fast Architecture</span>
+                                    <span class="card-arrow">↗</span>
                                 </div>
-                                <div class="suggest-card-sub">Explain Python asyncio producer-consumer pattern</div>
+                                <div class="suggest-card-title">Clean Code &amp; Systems</div>
+                                <div class="suggest-card-sub">Asyncio producer-consumer queues with error handling</div>
                             </div>
 
                             <div class="suggest-card" onclick="usePrompt('What do you remember about my project preferences and technical requirements?')">
-                                <div class="suggest-card-header">
-                                    <span>🧠</span>
-                                    <span>Memory Bank Context</span>
+                                <div class="suggest-card-top">
+                                    <span class="card-tag memory">🧠 Memory Bank</span>
+                                    <span class="card-arrow">↗</span>
                                 </div>
-                                <div class="suggest-card-sub">What do you remember about my preferences?</div>
-                            </div>
-
-                            <div class="suggest-card" onclick="usePrompt('Summarize key points from my uploaded documents.')">
-                                <div class="suggest-card-header">
-                                    <span>📚</span>
-                                    <span>Document Intelligence &amp; RAG</span>
-                                </div>
-                                <div class="suggest-card-sub">Query indexed documents for architectural decisions</div>
+                                <div class="suggest-card-title">Neural Vault Recall</div>
+                                <div class="suggest-card-sub">Review stored preferences, stack notes, and guidelines</div>
                             </div>
                         </div>
                     </div>
@@ -216,13 +298,13 @@
                 <footer class="chat-footer">
                     <div class="input-shell">
                         <input type="file" id="fileUploadInput" multiple accept=".pdf,.docx,.txt,.md,.csv,.xlsx,.json" style="display:none;">
-                        <button class="input-action-btn" id="btnAttachFile" title="Attach Document (PDF, DOCX, TXT, MD, CSV, XLSX, JSON)">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <button class="input-action-btn" id="btnAttachFile" title="Attach Document (PDF, DOCX, TXT, MD, CSV, XLSX, JSON)" aria-label="Attach Document">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
                             </svg>
                         </button>
-                        <button class="input-action-btn" id="btnVoiceRecord" title="Click to Speak (Local Whisper Transcription)">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <button class="input-action-btn" id="btnVoiceRecord" title="Click to Speak (Local Whisper Transcription)" aria-label="Voice Input">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path>
                                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"></path>
                                 <line x1="12" y1="19" x2="12" y2="23"></line>
@@ -232,8 +314,8 @@
 
                         <textarea class="chat-textarea" id="messageInput" rows="1" placeholder="Ask GHOSTMIND anything, or attach files / speak..."></textarea>
 
-                        <button class="btn-send" id="btnSend" title="Send Message (Enter)">
-                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3">
+                        <button class="btn-send" id="btnSend" title="Send Message (Enter)" aria-label="Send Message">
+                            <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="22" y1="2" x2="11" y2="13"></line>
                                 <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
                             </svg>
@@ -539,6 +621,18 @@
         document.getElementById('btnOpenSettings').onclick = () => { syncSettingsUI(); openModal('modalSettings'); };
         document.getElementById('btnHeaderSettings').onclick = () => { syncSettingsUI(); openModal('modalSettings'); };
 
+        const btnThemeToggle = document.getElementById('btnThemeToggle');
+        if (btnThemeToggle) {
+            btnThemeToggle.onclick = () => {
+                const current = document.documentElement.getAttribute('data-theme') || 'dark';
+                const next = current === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', next);
+                try {
+                    localStorage.setItem('ghostmind_theme', next);
+                } catch (_) {}
+            };
+        }
+
         function openModal(id) {
             const el = document.getElementById(id);
             if (el) el.classList.add('active');
@@ -588,13 +682,178 @@
             messageInput.dispatchEvent(new Event('input'));
         }
 
+        // --- Dynamic Greeting ---
+        function updateGreeting() {
+            const greetingEl = document.getElementById('dynamicGreeting');
+            if (!greetingEl) return;
+            const hour = new Date().getHours();
+            let salutation = "Good day";
+            if (hour >= 5 && hour < 12) salutation = "Good morning";
+            else if (hour >= 12 && hour < 17) salutation = "Good afternoon";
+            else if (hour >= 17 && hour < 22) salutation = "Good evening";
+            else salutation = "Good night";
+            greetingEl.textContent = `${salutation}! How can I assist your workflow today?`;
+        }
+
+        // --- Lightweight Celebratory Canvas Confetti Engine ---
+        function triggerConfetti(originX, originY) {
+            const canvas = document.getElementById('confettiCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const colors = ['#8b5cf6', '#ec4899', '#06b6d4', '#10b981', '#f59e0b', '#3b82f6', '#d946ef'];
+            const particles = [];
+            const count = 85;
+            const startX = originX || canvas.width / 2;
+            const startY = originY || canvas.height / 3;
+
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 8 + 3;
+                particles.push({
+                    x: startX,
+                    y: startY,
+                    vx: Math.cos(angle) * speed * (Math.random() > 0.5 ? 1.2 : 0.8),
+                    vy: Math.sin(angle) * speed - 3.5,
+                    w: Math.random() * 8 + 4,
+                    h: Math.random() * 6 + 3,
+                    color: colors[Math.floor(Math.random() * colors.length)],
+                    rotation: Math.random() * 360,
+                    rotationSpeed: (Math.random() - 0.5) * 12,
+                    gravity: 0.18,
+                    drag: 0.96,
+                    opacity: 1,
+                    fadeSpeed: Math.random() * 0.012 + 0.008
+                });
+            }
+
+            let animId = null;
+            function render() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                let alive = false;
+                for (let p of particles) {
+                    p.vx *= p.drag;
+                    p.vy = p.vy * p.drag + p.gravity;
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.rotation += p.rotationSpeed;
+                    p.opacity -= p.fadeSpeed;
+
+                    if (p.opacity > 0 && p.y < canvas.height + 50) {
+                        alive = true;
+                        ctx.save();
+                        ctx.translate(p.x, p.y);
+                        ctx.rotate((p.rotation * Math.PI) / 180);
+                        ctx.globalAlpha = Math.max(0, p.opacity);
+                        ctx.fillStyle = p.color;
+                        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+                        ctx.restore();
+                    }
+                }
+                if (alive) {
+                    animId = requestAnimationFrame(render);
+                } else {
+                    ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    if (animId) cancelAnimationFrame(animId);
+                }
+            }
+            render();
+        }
+
+        // --- Mesmerizing Startup Splash Orchestrator ---
+        async function initStartupSequence() {
+            const splash = document.getElementById('appSplashScreen');
+            if (!splash) return;
+
+            const step1 = document.getElementById('splashStep1');
+            const badge1 = document.getElementById('stepBadge1');
+            const step2 = document.getElementById('splashStep2');
+            const badge2 = document.getElementById('stepBadge2');
+            const step3 = document.getElementById('splashStep3');
+            const badge3 = document.getElementById('stepBadge3');
+            const bar = document.getElementById('splashProgressBar');
+            const caption = document.getElementById('splashCaption');
+
+            // Fallback safety timeout so splash screen never blocks permanently
+            const safetyTimer = setTimeout(() => {
+                if (splash && splash.style.display !== 'none') {
+                    splash.classList.add('fade-out');
+                    setTimeout(() => { splash.style.display = 'none'; }, 650);
+                }
+            }, 4500);
+
+            try {
+                // Step 1: Database & Memory Ready
+                if (step1) step1.className = 'splash-step active';
+                if (bar) bar.style.width = '30%';
+                if (caption) caption.textContent = 'Verifying local database & memory store...';
+                await new Promise(r => setTimeout(r, 220));
+                if (step1) {
+                    step1.className = 'splash-step done';
+                    if (badge1) badge1.textContent = '✓ Ready';
+                }
+
+                // Step 2: Ollama & Qwen 2.5 3B Engine
+                if (step2) step2.className = 'splash-step active';
+                if (bar) bar.style.width = '65%';
+                if (caption) caption.textContent = 'Connecting local Ollama intelligence...';
+
+                let sysStatus = null;
+                try {
+                    const res = await fetch('/api/status');
+                    sysStatus = await res.json();
+                } catch (_) {}
+
+                if (step2) {
+                    step2.className = 'splash-step done';
+                    if (badge2) {
+                        badge2.textContent = (sysStatus && sysStatus.ollama_running) ? '✓ Ready' : 'Standby';
+                    }
+                }
+
+                // Step 3: MCP Tools & Web Bus Sync
+                if (step3) step3.className = 'splash-step active';
+                if (bar) bar.style.width = '95%';
+                if (caption) caption.textContent = 'Syncing dynamic MCP tools & web bus...';
+                await new Promise(r => setTimeout(r, 260));
+                if (step3) {
+                    step3.className = 'splash-step done';
+                    if (badge3) badge3.textContent = '✓ Ready';
+                }
+                if (bar) bar.style.width = '100%';
+                if (caption) caption.textContent = '✨ GHOSTMIND Workspace Ready';
+
+                // Fade out smoothly
+                await new Promise(r => setTimeout(r, 380));
+                clearTimeout(safetyTimer);
+                splash.classList.add('fade-out');
+                setTimeout(() => {
+                    splash.style.display = 'none';
+                }, 650);
+            } catch (err) {
+                clearTimeout(safetyTimer);
+                splash.classList.add('fade-out');
+                setTimeout(() => { splash.style.display = 'none'; }, 650);
+            }
+        }
+
         // 1. Initial Page Load
         window.addEventListener('DOMContentLoaded', async () => {
+            updateGreeting();
             syncSettingsUI();
             checkOAuthRedirect();
-            await checkSystemStatus();
-            await loadConversations();
-            await updateBadgeCounts();
+
+            // Run splash sequence smoothly alongside status check and conversation load
+            const bootPromise = initStartupSequence();
+            const dataPromise = Promise.all([
+                checkSystemStatus(),
+                loadConversations(),
+                updateBadgeCounts()
+            ]);
+
+            await Promise.allSettled([bootPromise, dataPromise]);
         });
 
         // 2. System Status Check
@@ -1023,8 +1282,8 @@
             if (verif) {
                 const verifSpan = document.createElement('span');
                 let verifClass = 'verified';
-                if (verif.includes('Partial')) verifClass = 'partial';
-                else if (verif.includes('Unverified') || verif.includes('Offline')) verifClass = 'unverified';
+                if (verif.includes('Partial') || verif.includes('Conflicting')) verifClass = 'partial';
+                else if (verif.includes('Unverified') || verif.includes('Offline') || verif.includes('Failed') || verif.includes('Insufficient')) verifClass = 'unverified';
                 verifSpan.className = `verif-badge ${verifClass}`;
                 verifSpan.innerHTML = `🛡️ ${escapeHtml(verif)}`;
                 metaRibbon.appendChild(verifSpan);
@@ -1753,10 +2012,22 @@
                 const data = await res.json();
                 if (res.ok) {
                     showLiveBanner(`✓ Connected ${displayName} (${data.tool_count || 0} tools available)`);
+                    triggerConfetti();
                     setTimeout(hideLiveBanner, 4000);
-                    loadIntegrations();
-                    loadCatalog();
+                    await loadIntegrations();
+                    await loadCatalog();
                     updateBadgeCounts();
+
+                    // Flash celebratory pulse on the connected service card
+                    setTimeout(() => {
+                        const allCards = document.querySelectorAll('.service-card');
+                        allCards.forEach(card => {
+                            if (card.textContent.includes(displayName)) {
+                                card.classList.add('just-connected');
+                                setTimeout(() => card.classList.remove('just-connected'), 2000);
+                            }
+                        });
+                    }, 60);
                 } else {
                     alert(`Connection failed: ${data.detail || 'Error'}`);
                     hideLiveBanner();
@@ -1775,13 +2046,23 @@
             if (!confirm(`Disconnect "${serverName}" and revoke stored credentials?`)) return;
             showLiveBanner(`Disconnecting ${serverName}...`);
             try {
+                // Add disconnect animation before removing
+                const allCards = document.querySelectorAll('.service-card');
+                allCards.forEach(card => {
+                    if (card.textContent.includes(serverName)) {
+                        card.classList.add('just-disconnected');
+                    }
+                });
+
                 const res = await fetch(`/api/integrations/${serverName}`, { method: 'DELETE' });
                 if (res.ok) {
                     showLiveBanner(`✓ Disconnected ${serverName}`);
                     setTimeout(hideLiveBanner, 3000);
-                    loadIntegrations();
-                    loadCatalog();
-                    updateBadgeCounts();
+                    setTimeout(async () => {
+                        await loadIntegrations();
+                        await loadCatalog();
+                        updateBadgeCounts();
+                    }, 350);
                 } else {
                     const data = await res.json();
                     alert(`Failed to disconnect: ${data.detail || 'Error'}`);
@@ -1842,6 +2123,7 @@
                 const data = await res.json();
                 if (res.ok) {
                     showLiveBanner(`✓ Connected "${displayName}" (${data.tool_count || 0} tools discovered)`);
+                    triggerConfetti();
                     setTimeout(hideLiveBanner, 4000);
                     document.getElementById('formCustomServer').reset();
                     switchIntegrationsTab('active');
@@ -1914,6 +2196,7 @@
             if (urlParams.get('oauth_success')) {
                 const prov = urlParams.get('provider') || 'service';
                 showLiveBanner(`✓ Successfully authorized ${prov.toUpperCase()}! Connecting MCP Server...`);
+                triggerConfetti();
                 fetch('/api/integrations/connect', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },

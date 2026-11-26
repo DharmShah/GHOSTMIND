@@ -513,7 +513,12 @@ def process_jsonrpc(line: str):
         sys.stdout.flush()
 
 def main():
-    for line in sys.stdin:
+    # Use readline() instead of iterator to avoid Python's internal
+    # prefetch buffer that delays line delivery over pipes on Windows
+    while True:
+        line = sys.stdin.readline()
+        if not line:
+            break
         line = line.strip()
         if line:
             process_jsonrpc(line)

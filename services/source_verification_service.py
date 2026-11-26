@@ -37,6 +37,42 @@ def detect_conflicting_numbers(texts: List[str]) -> List[str]:
 
     return conflicts
 
+def detect_conflicting_prices(texts: List[str]) -> List[str]:
+    """
+    Detects significant conflicting monetary prices or exchange rates across sources
+    (e.g. ₹76,500 vs ₹82,000 or $2,650 vs $2,850).
+    """
+    conflicts = []
+    if len(texts) < 2:
+        return conflicts
+
+    price_by_source: List[List[float]] = []
+    for t in texts:
+        # Match currency-prefixed numbers like ₹76,500, Rs. 76500, $2,650.50, INR 78,200
+        matches = re.findall(r'(?:₹|Rs\.?|INR|\$|USD|€|EUR|£|GBP)\s*([0-9][0-9,]*(?:\.[0-9]+)?)', t, re.IGNORECASE)
+        nums = []
+        for m in matches:
+            try:
+                val = float(m.replace(",", ""))
+                if val > 0:
+                    nums.append(val)
+            except ValueError:
+                pass
+        if nums:
+            price_by_source.append(nums)
+
+    if len(price_by_source) >= 2:
+        first_vals = [vals[0] for vals in price_by_source]
+        min_p, max_p = min(first_vals), max(first_vals)
+        # Flag if prices diverge by more than 2%
+        if min_p > 0 and ((max_p - min_p) / min_p) > 0.02:
+            conflicts.append(
+                f"Conflicting prices/rates reported across sources ({min_p:,.2f} vs {max_p:,.2f}); "
+                "differences may reflect unit, purity (24K/22K), GST, or market type (IBJA vs retail)."
+            )
+    return conflicts
+
+
 def evaluate_sources_and_verify(pages: List[PageContent]) -> VerificationResult:
     """
     Evaluates source credibility, checks independent cross-corroboration,
@@ -55,9 +91,9 @@ def evaluate_sources_and_verify(pages: List[PageContent]) -> VerificationResult:
     unique_domains = list({p.domain for p in successful_pages})
     official_backed = any(p.authority_score >= 0.9 for p in successful_pages)
 
-    # Check for factual divergence / conflicts in texts
+    # Check for factual divergence / conflicts in texts (versions + prices)
     texts = [p.clean_text for p in successful_pages]
-    conflicts = detect_conflicting_numbers(texts)
+    conflicts = detect_conflicting_numbers(texts) + detect_conflicting_prices(texts)
 
     # Status classification
     if conflicts:

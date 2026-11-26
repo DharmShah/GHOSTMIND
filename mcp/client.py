@@ -28,10 +28,17 @@ class MCPClient:
         if spec.transport == TransportType.STDIO:
             if not spec.command:
                 raise ValueError(f"Stdio transport requires a command for server '{spec.name}'")
+            # For Python module-based servers (python -m ...),
+            # set cwd to the project root so the module path resolves correctly
+            cwd = None
+            if spec.command.lower() in ("python", "python3") and spec.args and spec.args[0] == "-m":
+                import os
+                cwd = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
             return StdioTransport(
                 command=spec.command,
                 args=spec.args,
-                env=spec.env
+                env=spec.env,
+                cwd=cwd
             )
         elif spec.transport in (TransportType.SSE, TransportType.HTTP):
             if not spec.url:

@@ -6,11 +6,12 @@ import concurrent.futures
 import logging
 from typing import Dict, Any, List, Optional, Generator
 from sqlalchemy.orm import Session
+from sqlalchemy import select, desc
 from langchain_ollama import ChatOllama
 
 from core.config import settings
 import ollama_service
-from models import User
+from models import User, Message
 from services import conversation_service, rag_service, memory_service, web_search_service
 from services.query_classifier import classify_query, QueryCategory
 from services.research_agent import research_agent
@@ -134,34 +135,63 @@ def prepare_chat_turn_stream(
         )
         rag_prompt_block = rag_service.build_rag_context_prompt(retrieved_chunks)
 
-    # 5. Hybrid Research with Intelligent Query Classification
-    internet_online = web_search_service.is_internet_available()
+    # 5. Hybrid Research with Strict Web Search Toggle Enforcement
     web_prompt_block = ""
     web_sources = []
     has_doc_context = bool(document_ids or retrieved_chunks)
 
-    classification = classify_query(cleaned_prompt, has_document_context=has_doc_context)
-    verification_status = "Local Model Knowledge"
+    if not enable_web_search:
+        # Web Search OFF: zero external network requests, local model knowledge only
+        internet_online = False
+        classification = classify_query(cleaned_prompt, has_document_context=has_doc_context)
+        verification_status = "Local Knowledge"
+    else:
+        internet_online = web_search_service.is_internet_available()
+        # Pass recent conversation turns so follow-up challenges ("Are you sure?...") resolve context
+        recent_msgs = list(reversed(db.scalars(
+            select(Message)
+            .where(
+                Message.conversation_id == conv.id,
+                Message.user_id == user.id,
+                Message.id != user_msg.id
+            )
+            .order_by(desc(Message.created_at))
+            .limit(4)
+        ).all()))
+        recent_history = [
+            {"role": m.role, "content": m.content}
+            for m in recent_msgs
+        ]
+        classification = classify_query(
+            cleaned_prompt,
+            has_document_context=has_doc_context,
+            recent_history=recent_history
+        )
+        verification_status = "Local Knowledge"
 
-    if enable_web_search and classification.requires_web_search:
-        for item_type, data in research_agent.execute_research_stream(cleaned_prompt, classification):
-            if item_type == "status":
-                yield ("status", data)
-            elif item_type == "result":
-                research_result = data
-                if research_result and research_result.get("success"):
-                    web_prompt_block = research_result.get("research_context", "")
-                    web_sources = research_result.get("sources", [])
-                    verif = research_result.get("verification")
-                    verification_status = verif.overall_status if verif else "Verified"
-                elif research_result and research_result.get("offline"):
-                    web_prompt_block = research_result.get("research_context", "")
-                    verification_status = "Offline"
-                else:
-                    verification_status = "Unverified"
-    elif enable_web_search and not classification.requires_web_search:
-        # Local knowledge sufficient for stable concepts (General Knowledge / Personal Context)
-        verification_status = "Local Knowledge Sufficient"
+        if classification.requires_web_search:
+            for item_type, data in research_agent.execute_research_stream(cleaned_prompt, classification):
+                if item_type == "status":
+                    yield ("status", data)
+                elif item_type == "result":
+                    research_result = data
+                    if research_result and research_result.get("success"):
+                        web_prompt_block = research_result.get("research_context", "")
+                        web_sources = research_result.get("sources", [])
+                        verif = research_result.get("verification")
+                        verification_status = research_result.get("status_label") or (verif.overall_status if verif else "Web Verified")
+                    elif research_result and research_result.get("offline"):
+                        web_prompt_block = research_result.get("research_context", "")
+                        verification_status = "Search Failed"
+                    elif research_result and research_result.get("future_date"):
+                        web_prompt_block = research_result.get("research_context", "")
+                        verification_status = "Web Evidence Insufficient"
+                    else:
+                        web_prompt_block = research_result.get("research_context", "") if research_result else ""
+                        verification_status = "Web Evidence Insufficient"
+        else:
+            # Local knowledge sufficient for stable concepts (General Knowledge / Personal Context)
+            verification_status = "Local Knowledge"
 
     # 6. Assemble bounded context
     bounded_messages, active_memory_texts = memory_service.build_bounded_context(
@@ -172,7 +202,8 @@ def prepare_chat_turn_stream(
         rag_context=rag_prompt_block,
         web_context=web_prompt_block,
         internet_online=internet_online,
-        exclude_message_id=user_msg.id
+        exclude_message_id=user_msg.id,
+        web_search_enabled=enable_web_search
     )
 
     # 6b. Ensure active MCP tools are synchronized and inject relevant tools

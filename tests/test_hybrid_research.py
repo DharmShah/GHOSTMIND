@@ -197,3 +197,157 @@ def test_14_correct_source_links_in_frontend_metadata():
     assert formatted[0]["domain"] == "github.com"
     assert formatted[0]["publication_date"] == "2026-03-01"
     assert formatted[0]["authority_score"] == 1.0
+
+
+def test_A_mcp_in_ai_agents_classification_and_prompt():
+    """Test A: 'What is MCP in terms of AI agents?' resolves to Model Context Protocol."""
+    prompt = "What is MCP in terms of AI agents?"
+    classification = classify_query(prompt, has_document_context=False)
+    assert classification.requires_web_search is True
+    assert any("model context protocol" in t.lower() for t in classification.search_topics)
+
+
+def test_B_resist_confirmation_bias_false_mcp_expansion():
+    """Test B: 'MCP means Machine Configuration Protocol, right?' triggers verification & anti-bias prompt."""
+    prompt = "MCP means Machine Configuration Protocol, right?"
+    classification = classify_query(prompt, has_document_context=False)
+    assert classification.requires_web_search is True
+    assert any("model context protocol" in t.lower() for t in classification.search_topics)
+
+
+def test_C_challenge_followup_recovers_context_and_maintains_fact():
+    """Test C: 'Are you sure? I think it means Machine Configuration Protocol.' recovers MCP from history."""
+    prompt = "Are you sure? I think it means Machine Configuration Protocol."
+    history = [
+        {"role": "user", "content": "What is MCP in terms of AI agents?"},
+        {"role": "assistant", "content": "MCP stands for Model Context Protocol."}
+    ]
+    classification = classify_query(prompt, has_document_context=False, recent_history=history)
+    assert classification.requires_web_search is True
+    assert any("mcp" in t.lower() for t in classification.search_topics)
+
+
+def test_D_mcp_other_industry_recognizes_ambiguity():
+    """Test D: 'What does MCP mean in another industry?' recognizes cross-industry ambiguity."""
+    prompt = "What does MCP mean in another industry?"
+    classification = classify_query(prompt, has_document_context=False)
+    assert classification.requires_web_search is True
+    assert any("industries" in t.lower() or "meanings" in t.lower() for t in classification.search_topics)
+
+
+def test_E_web_search_off_zero_external_requests_and_local_badge():
+    """Test E: Web Search OFF makes zero external requests and never emits Web Verified / Internet Research."""
+    import uuid
+    from core.database import SessionLocal
+    from models import User
+    from services import chat_service
+
+    db_session = SessionLocal()
+    try:
+        unique = uuid.uuid4().hex[:8]
+        test_user = User(
+            id=uuid.uuid4(),
+            google_sub=f"sub_hr_{unique}",
+            email=f"hr_user_{unique}@ghostmind.local",
+            display_name="Hybrid Research Test User"
+        )
+        db_session.add(test_user)
+        db_session.commit()
+        db_session.refresh(test_user)
+
+        mock_llm = MagicMock()
+        mock_llm.invoke.return_value = MagicMock(
+            content="In the AI-agent ecosystem, MCP stands for Model Context Protocol. I cannot verify recent updates without Web Search enabled."
+        )
+
+        with patch("services.web_search_service.web_search_service.is_internet_available") as mock_inet, \
+             patch("services.web_search_service.web_search_service.search_web") as mock_search, \
+             patch("ollama_service.check_system_readiness", return_value={"ready": True}), \
+             patch("services.chat_service.get_chat_model", return_value=mock_llm):
+            result = chat_service.execute_chat_turn(
+                db=db_session,
+                user=test_user,
+                message="What is MCP in terms of AI agents?",
+                enable_web_search=False,
+                enable_rag=False
+            )
+
+        mock_inet.assert_not_called()
+        mock_search.assert_not_called()
+        assert result["knowledge_source_badge"] == "Local Knowledge"
+        assert result["verification_status"] == "Local Knowledge"
+        assert result["sources"] == []
+
+        # Verify system prompt includes required truth & anti-confirmation-bias rules + Web Search OFF notice
+        sent_messages = mock_llm.invoke.call_args[0][0]
+        sys_prompt = sent_messages[0]["content"]
+        assert "Truth and correctness are more important than agreement." in sys_prompt
+        assert "Do not change a factual answer merely because the user challenges it" in sys_prompt
+        assert "Web Search is currently OFF" in sys_prompt
+    finally:
+        db_session.close()
+
+
+def test_F_web_search_on_retrieves_official_sources_and_grounds_answer():
+    """Test F: Web Search ON retrieves authoritative sources, prioritizes official docs, and grounds answer."""
+    import uuid
+    from core.database import SessionLocal
+    from models import User
+    from services import chat_service
+
+    db_session = SessionLocal()
+    try:
+        unique = uuid.uuid4().hex[:8]
+        test_user = User(
+            id=uuid.uuid4(),
+            google_sub=f"sub_hr_{unique}",
+            email=f"hr_user_{unique}@ghostmind.local",
+            display_name="Hybrid Research Test User"
+        )
+        db_session.add(test_user)
+        db_session.commit()
+        db_session.refresh(test_user)
+
+        search_results = [
+            {"title": "Random Blog", "url": "https://randomblog.example.com/mcp", "snippet": "A blog post about MCP."},
+            {"title": "Model Context Protocol", "url": "https://modelcontextprotocol.io/introduction", "snippet": "Model Context Protocol (MCP) is an open protocol that standardizes how applications provide context to LLMs."}
+        ]
+
+        official_page = PageContent(
+            url="https://modelcontextprotocol.io/introduction",
+            domain="modelcontextprotocol.io",
+            title="Model Context Protocol",
+            publication_date="2025-11-01",
+            clean_text="Model Context Protocol (MCP) is an open protocol that standardizes how applications provide context to LLMs.",
+            status="retrieved",
+            authority_score=1.0
+        )
+
+        mock_llm = MagicMock()
+        mock_llm.invoke.return_value = MagicMock(
+            content="No. In AI agents, MCP stands for Model Context Protocol, an open protocol for connecting AI applications with external tools and data sources [1]."
+        )
+
+        with patch("services.web_search_service.web_search_service.is_internet_available", return_value=True), \
+             patch("services.web_search_service.web_search_service.search_web", return_value=search_results) as mock_search, \
+             patch("services.research_agent.retrieve_page_content", return_value=official_page) as mock_retrieve, \
+             patch("ollama_service.check_system_readiness", return_value={"ready": True}), \
+             patch("services.chat_service.get_chat_model", return_value=mock_llm):
+            result = chat_service.execute_chat_turn(
+                db=db_session,
+                user=test_user,
+                message="MCP means Machine Configuration Protocol, right?",
+                enable_web_search=True,
+                enable_rag=False
+            )
+
+        assert mock_search.called
+        assert mock_retrieve.called
+        # Official domain modelcontextprotocol.io should be retrieved first due to authority sorting
+        assert mock_retrieve.call_args_list[0][0][0] == "https://modelcontextprotocol.io/introduction"
+        assert result["knowledge_source_badge"] == "Internet Research"
+        assert len(result["sources"]) >= 1
+        assert result["sources"][0]["url"] == "https://modelcontextprotocol.io/introduction"
+        assert "Model Context Protocol" in result["response"]
+    finally:
+        db_session.close()

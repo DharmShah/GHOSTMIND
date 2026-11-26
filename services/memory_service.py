@@ -158,7 +158,8 @@ def build_bounded_context(
     rag_context: str = "",
     web_context: str = "",
     internet_online: bool = True,
-    exclude_message_id: Optional[uuid.UUID] = None
+    exclude_message_id: Optional[uuid.UUID] = None,
+    web_search_enabled: bool = True
 ) -> Tuple[List[Dict[str, str]], List[str]]:
     """
     Assembles a token-optimized, multi-layered context window:
@@ -179,28 +180,49 @@ def build_bounded_context(
         active_memories = list_memories_for_user(db, user_id, active_only=True)
         relevant_memories = filter_relevant_memories(active_memories, current_prompt, max_count=settings.MAX_MEMORIES)
 
-    # 2. System Prompt Assembly with strict anti-hallucination & internet awareness
-    system_parts = [
-        "You are GHOSTMIND, an intelligent, private local AI operating system.",
-        "You provide concise, accurate, and deeply knowledgeable answers on technology, software engineering, and modern artificial intelligence.",
-        "CRITICAL KNOWLEDGE & HONESTY POLICY:\n"
-        "1. FACTUAL ACCURACY: If you have verified knowledge from your training, local documents, or live web search results, answer accurately, clearly, and directly.\n"
-        "2. ANTI-HALLUCINATION & FACTUAL VERIFICATION: If you are asked about an unverified real-world event, obscure person, or specific unknown external claim (and no facts exist in the provided documents or web search results), do not guess or fabricate facts. State clearly that you do not have verified knowledge of that event or claim.\n"
-        "3. CODE, SVG & UI GENERATION: You are an expert software engineer and UI architect. You CAN and MUST generate complete code, UI structures, SVG vector markup, SwiftUI, Flutter, React, and scripts when requested. NEVER refuse code, SVG, or UI requests with 'I don't have knowledge of that' or 'beyond my capabilities as a text-based AI'. Produce the complete, clean code or SVG directly.\n"
-        + (
+    # 2. System Prompt Assembly with strict anti-hallucination, acronym accuracy, & internet awareness
+    if not web_search_enabled:
+        internet_status_block = (
+            "4. REAL-TIME INTERNET STATUS: Web Search is currently OFF. Do NOT make external claims of web verification, "
+            "do NOT fabricate citations or URLs, and answer using your local model knowledge only. "
+            "If asked for current or historical market prices, exchange rates, live data, or recent events, explicitly state that "
+            "current/historical external pricing cannot be retrieved because Web Search is disabled, and ask the user to enable Web Search."
+        )
+    elif internet_online:
+        internet_status_block = (
             "4. REAL-TIME INTERNET STATUS: Internet access is currently ACTIVE. Real-time web search results have been fetched and provided below when needed to ensure your knowledge is foolproof and up-to-date.\n"
             "5. GROUNDED ANSWER GENERATION:\n"
             "   - When research evidence is supplied below, use it to support current and externally verifiable claims.\n"
+            "   - Preserve numerical precision, dates, currencies, purity (e.g. 24K/22K/18K), and units exactly as retrieved. Never invent missing values or blindly average conflicting market prices (e.g. IBJA vs retail).\n"
+            "   - If essential context such as location or currency is missing and ambiguous for a local commodity price, ask the user for clarification instead of silently assuming.\n"
             "   - Do not invent facts, statistics, versions, dates, quotations, or URLs.\n"
             "   - Do not claim that a source confirms something unless the retrieved content actually supports it.\n"
             "   - Attach citations [1], [2], etc., to claims derived from external research.\n"
             "   - Clearly distinguish verified facts from explanations and inferences.\n"
-            "   - If sources disagree, explain the disagreement rather than choosing an unsupported answer.\n"
-            "   - If evidence is insufficient, explicitly state: 'I couldn't verify this information using the available sources.'\n"
+            "   - If sources disagree, explain the disagreement (timestamps, units, purity, market type) rather than choosing an unsupported answer.\n"
+            "   - If evidence is insufficient, explicitly state: 'I couldn't find enough reliable data to answer this accurately.'\n"
             "   - Never fabricate citations or URLs. Prefer a transparent incomplete answer over a confident but unsupported answer."
-            if internet_online else
-            "4. REAL-TIME INTERNET STATUS: The system is currently OFFLINE (no internet connection). You cannot search the web. If you do not have confident knowledge of an external factual question, state: 'I do not have knowledge of that, and without an active internet connection, I cannot search for it. I will not give you wrong output because I don't know.'"
         )
+    else:
+        internet_status_block = (
+            "4. REAL-TIME INTERNET STATUS: The system is currently OFFLINE (no internet connection). You cannot search the web. "
+            "If you do not have confident knowledge of an external factual question, state: "
+            "'I do not have knowledge of that, and without an active internet connection, I cannot search for it. I will not give you wrong output because I don't know.'"
+        )
+
+    system_parts = [
+        "You are GHOSTMIND, an intelligent, private local AI operating system.",
+        "You are a technically accurate AI assistant. Truth and correctness are more important than agreement.\n\n"
+        "Never fabricate technical definitions, acronyms, APIs, protocols, citations, or facts.\n\n"
+        "Do not change a factual answer merely because the user challenges it or proposes another answer. Re-evaluate the claim independently.\n\n"
+        "Distinguish established facts, reasonable inferences, and uncertainty.\n\n"
+        "When uncertain, say what you know and what you cannot verify. Never manufacture confidence.\n\n"
+        "For technical questions, prioritize established industry terminology and authoritative documentation.",
+        "CRITICAL KNOWLEDGE, ACRONYM & HONESTY POLICY:\n"
+        "1. FACTUAL & ACRONYM ACCURACY: Resolve technical acronyms using conversation context and established terminology in the relevant domain (e.g., in AI agents, MCP stands for Model Context Protocol — never invent expansions like 'Machine Configuration Protocol' or 'Master Control Panel'). If multiple meanings are genuinely possible across industries, explain the ambiguity or ask for clarification.\n"
+        "2. RESIST CONFIRMATION BIAS & ANTI-HALLUCINATION: Never treat a user's suggested answer as proof that it is correct. If a user's claim conflicts with established facts, politely correct them and explain briefly. If asked about an unverified real-world event, obscure person, or unknown claim (with no facts in documents or web search), do not guess or fabricate facts.\n"
+        "3. CODE, SVG & UI GENERATION: You are an expert software engineer and UI architect. You CAN and MUST generate complete code, UI structures, SVG vector markup, SwiftUI, Flutter, React, and scripts when requested. NEVER refuse code, SVG, or UI requests with 'I don't have knowledge of that' or 'beyond my capabilities as a text-based AI'. Produce the complete, clean code or SVG directly.\n"
+        + internet_status_block
     ]
 
     # Only inject memory section if relevant memories exist

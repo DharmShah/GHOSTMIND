@@ -260,6 +260,42 @@ To safeguard user data and prevent unintended external modifications:
   4. Enhanced `mcp/manager.py` to automatically upgrade persisted catalog servers to the latest server executable definition.
   5. Added comprehensive automated test `test_figma_native_mcp_connection` verifying immediate handshake and tool registration.
 
+### Issue 9: UI/UX Modernization, Mesmerizing Startup Splash & MCP Celebration FX
+- **User Need**: Transform the entire user experience into a captivating, modern, and sticky interface (comparable to Instagram's engaging polish), add celebratory animations on MCP connection/disconnection, provide an animated startup splash loader while Ollama/backend initialize, and eliminate false anti-hallucination refusals on code/SVG/UI generation prompts.
+- **Implementation**:
+  1. **Obsidian Glass & Radiant Aurora Theme (`style.css`)**:
+     - Deep obsidian background (`#07070a`) layered with soft radial aurora glows (`rgba(139, 92, 246, 0.12)`, `rgba(6, 182, 212, 0.08)`, `rgba(236, 72, 153, 0.06)`).
+     - Elevated frosted-glass cards with `backdrop-filter: blur(28px)`, subtle translucent borders (`rgba(255, 255, 255, 0.08)`), and modern typography.
+     - Modernized Bento hero suggestion grid, Instagram-style story status indicator chips, gradient user bubbles, and sleek floating capsule composer dock.
+  2. **Mesmerizing Startup Splash Loader (`index.html` & `style.css`)**:
+     - Full-screen animated splash screen featuring concentric counter-rotating orbital rings (`.splash-orb-ring`), breathing core orb, and real-time step status checklist (Database & Memory, Ollama Neural Engine, and Dynamic MCP Tools).
+     - Micro-progress bar tracking actual backend readiness, with smooth 600ms fade-out transition and safety timeout fallback.
+  3. **Celebratory Animations & Canvas Confetti Engine**:
+     - Zero-dependency HTML5 Canvas confetti generator (`triggerConfetti()`) firing multi-colored particle bursts on successful MCP server connections, custom server registrations, and OAuth 2.0 loopback authorizations.
+     - Glowing pulse ripple animation (`.service-card.just-connected`, `mcpCelebratePulse`) and subtle disconnect shake feedback (`.service-card.just-disconnected`, `mcpDisconnectShake`).
+  4. **Code, SVG & UI Generation Policy (`services/memory_service.py`)**:
+     - Added explicit `Rule 3: CODE, SVG & UI GENERATION` to the system prompt directive ensuring Qwen 2.5 3B delivers rich, copy-pasteable SVG code and UI structures without false refusals.
+
+### Issue 10: Hallucination, Acronym Resolution, User-Confirmation Bias & Strict Web Search Toggle
+- **Cause**:
+  1. `services/chat_service.py` previously called `web_search_service.is_internet_available()` even when `enable_web_search=False` and passed `internet_online=True` to `build_bounded_context()`, violating strict Web-Search-OFF isolation.
+  2. `services/query_classifier.py` did not detect general technical acronym queries or multi-turn user confirmation-bias challenges (e.g. `"Are you sure? I think it means Machine Configuration Protocol."`), and `services/research_agent.py` did not sort search results by domain authority before fetching pages.
+  3. `services/memory_service.py` needed explicit directives against inventing technical terminology, resisting user confirmation bias, and distinguishing established facts, inferences, and uncertainty.
+- **Fix**:
+  1. **System Prompt & Guardrails (`services/memory_service.py`)**: Added explicit truth-over-agreement, anti-confirmation-bias, acronym accuracy, and uncertainty communication rules to `build_bounded_context()`, plus `web_search_enabled` enforcement so Web Search OFF strictly instructs local-only answers without fabricated verification.
+  2. **Strict Web Search Toggle (`services/chat_service.py`)**: When `enable_web_search=False`, skips `is_internet_available()` completely (zero external network requests) and sets `verification_status="Local Model Knowledge"`. When `enable_web_search=True`, passes recent conversation history to `classify_query()` so follow-up challenges resolve context.
+  3. **Acronym, Challenge & Authority Routing (`services/query_classifier.py`, `services/page_retrieval_service.py`, `services/research_agent.py`)**: Added technical acronym and confirmation-bias challenge detection with clean authoritative search topic generation, expanded official documentation domains (`modelcontextprotocol.io`, etc.), and sorted search results by `compute_authority_score()` before page retrieval.
+  4. **Regression Tests (`tests/test_hybrid_research.py`)**: Added Tests A–F covering MCP acronym resolution, confirmation-bias resistance, multi-turn challenge context recovery, cross-industry ambiguity, Web Search OFF isolation, and Web Search ON official-source retrieval.
+
+### Issue 11: Universal Real-Time Web Intelligence & Price Retrieval Engine
+- **Cause**: Real-time and historical financial queries (gold/silver prices, stock closing prices, crypto, forex rates, and date-specific queries like `26/11/2026`) were not detected by `query_classifier.py`, had no date/entity extraction or future-date guard, lacked price conflict detection, and reported `"Offline"`/`"Unverified"` instead of explicit backend statuses.
+- **Fix**:
+  1. **Web Intelligence & Entity Extraction (`services/web_intelligence_service.py`)**: Added deterministic 5-category `SearchIntent` classification (`REAL_TIME_QUERY`, `HISTORICAL_DATA_QUERY`, `CURRENT_TECHNICAL_QUERY`, `GENERAL_INFORMATION_QUERY`, `LOCAL_KNOWLEDGE_QUERY`), date parser (`DD/MM/YYYY`, `DD-MM-YYYY`, `YYYY-MM-DD`, natural language, `today`, `yesterday`, `last week`, `last month`, plus future-date guard), financial entity extraction (bullion purity/unit, stocks, crypto, forex pairs, location/currency), authoritative query generation, and normalized structured evidence builder.
+  2. **TTL Search Cache (`services/web_search_service.py`)**: Added lightweight in-memory TTL cache (`120s` for real-time, `3600s` for historical) that never serves expired entries.
+  3. **Financial Authority Ranking & Price Conflict Detection (`services/page_retrieval_service.py`, `services/source_verification_service.py`)**: Added bullion/exchange/regulatory domains (`ibja.co`, `ibjarates.com`, `rbi.org.in`, `nseindia.com`, `bseindia.com`, `finance.yahoo.com`, etc.) and `detect_conflicting_prices()` to flag >2% price divergences.
+  4. **Explicit Backend Statuses & UI (`services/research_agent.py`, `services/chat_service.py`, `services/memory_service.py`, `index.html`)**: Enforced `Local Knowledge`, `Web Verified`, `Web Evidence Insufficient`, `Search Failed`, `Historical Data Retrieved`, `Real-Time Data Retrieved`, and `Conflicting Sources` controlled solely by the backend.
+  5. **Automated Tests (`tests/test_web_intelligence.py`)**: Added 10 focused tests covering gold today, historical gold (`26/11/2026`), USD/INR forex, latest Qwen model, Python list local knowledge, Web Search OFF isolation, Search Failed on offline, conflicting gold prices, future-date rejection, and missing location/currency clarification.
+
 ---
 
 ## 7. Operational Commands
@@ -278,7 +314,7 @@ venv\Scripts\python.exe make_shortcut.py
 
 ### Running Automated Verification Tests
 ```cmd
-# Run complete test suite (46 tests: platform, MCP ecosystem, hybrid research):
+# Run complete test suite (47 tests: platform, MCP ecosystem with Figma, hybrid research):
 venv\Scripts\python.exe -m pytest tests/ -v
 
 # Run Hybrid Research & Knowledge tests only:

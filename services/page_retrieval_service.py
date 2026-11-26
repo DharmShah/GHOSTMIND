@@ -133,12 +133,16 @@ def compute_authority_score(domain: str, url: str) -> float:
     """
     d = domain.lower()
 
-    # Official documentation & core code repositories
+    # Official documentation, exchanges, bullion associations, & core code repositories
     if any(h in d for h in [
         "docs.", "readthedocs.io", "github.com", "python.org",
         "fastapi.tiangolo.com", "langchain.com", "crewai.com",
         "huggingface.co", "anthropic.com", "openai.com", "ollama.com",
-        "mozilla.org", "w3.org", "iso.org"
+        "modelcontextprotocol.io", "developer.mozilla.org", "react.dev",
+        "nextjs.org", "vuejs.org", "kubernetes.io", "docker.com",
+        "mozilla.org", "w3.org", "iso.org",
+        "ibja.co", "ibjarates.com", "rbi.org.in", "nseindia.com", "bseindia.com",
+        "sec.gov", "ecb.europa.eu", "federalreserve.gov", "nasdaq.com", "nyse.com"
     ]):
         return 1.0
 
@@ -146,12 +150,16 @@ def compute_authority_score(domain: str, url: str) -> float:
     if d.endswith(".gov") or d.endswith(".edu") or "arxiv.org" in d or "nature.com" in d:
         return 0.95
 
-    # High-credibility tech publications
+    # Established financial & high-credibility tech publications
     if any(m in d for m in [
+        "reuters.com", "bloomberg.com", "finance.yahoo.com", "economictimes.indiatimes.com",
+        "moneycontrol.com", "livemint.com", "wsj.com", "ft.com",
+        "goodreturns.in", "bankbazaar.com", "goldprice.org", "bullionvault.com",
+        "xe.com", "coingecko.com", "coinmarketcap.com", "investing.com",
         "techcrunch.com", "theverge.com", "arstechnica.com", "wired.com",
         "zdnet.com", "venturebeat.com", "bleepingcomputer.com"
     ]):
-        return 0.80
+        return 0.85
 
     # General technical community
     if any(c in d for c in ["stackoverflow.com", "dev.to", "medium.com", "substack.com"]):

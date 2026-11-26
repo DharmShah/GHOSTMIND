@@ -163,7 +163,19 @@ class StdioTransport(BaseTransport):
             return await asyncio.wait_for(fut, timeout=timeout)
         except asyncio.TimeoutError:
             self._pending_requests.pop(req_id, None)
-            raise TimeoutError(f"MCP request '{method}' timed out after {timeout}s")
+            # Capture stderr to surface actual subprocess errors in the timeout message
+            stderr_hint = ""
+            if self.process and self.process.stderr:
+                try:
+                    stderr_data = self.process.stderr._buffer if hasattr(self.process.stderr, '_buffer') else b""
+                    if not stderr_data:
+                        # Try non-blocking read
+                        stderr_data = await asyncio.wait_for(self.process.stderr.read(4096), timeout=0.5)
+                    if stderr_data:
+                        stderr_hint = f" — subprocess stderr: {stderr_data.decode('utf-8', errors='ignore').strip()}"
+                except Exception:
+                    pass
+            raise TimeoutError(f"MCP request '{method}' timed out after {timeout}s{stderr_hint}")
         except Exception:
             self._pending_requests.pop(req_id, None)
             raise

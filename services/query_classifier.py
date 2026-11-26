@@ -1,7 +1,13 @@
 import re
 from enum import Enum
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
+from services.web_intelligence_service import (
+    SearchIntent,
+    extract_financial_entities,
+    classify_search_intent,
+    build_authoritative_search_queries,
+)
 
 class QueryCategory(str, Enum):
     GENERAL_KNOWLEDGE = "general_knowledge"       # A. Stable CS/math/science concepts (local LLM sufficient)
@@ -20,6 +26,8 @@ class QueryClassification:
     search_topics: List[str] = field(default_factory=list)
     verification_targets: List[str] = field(default_factory=list)
     reason: str = ""
+    search_intent: str = SearchIntent.LOCAL_KNOWLEDGE_QUERY.value
+    extracted_entities: Dict[str, Any] = field(default_factory=dict)
 
 def clean_query_text(query: str) -> str:
     """Strips common greeting fluff and conversational prefixes."""
@@ -36,7 +44,8 @@ def clean_query_text(query: str) -> str:
 def classify_query(
     query: str,
     has_document_context: bool = False,
-    has_memories: bool = False
+    has_memories: bool = False,
+    recent_history: Optional[List[Dict[str, str]]] = None
 ) -> QueryClassification:
     """
     Intelligent query classification layer.
@@ -89,6 +98,24 @@ def classify_query(
     explicit_search = any(cleaned.startswith(p) for p in [
         "search for", "search web for", "google", "look up", "browse online", "find online"
     ]) or "search the internet" in cleaned or "search the web" in cleaned
+
+    # 3b. Real-Time, Historical & Financial Intelligence Routing
+    entities = extract_financial_entities(query, recent_history=recent_history)
+    intent = classify_search_intent(query, entities=entities, has_document_context=has_document_context)
+
+    if intent in (SearchIntent.HISTORICAL_DATA_QUERY, SearchIntent.REAL_TIME_QUERY):
+        topics = build_authoritative_search_queries(query, entities, intent)
+        return QueryClassification(
+            category=QueryCategory.TIME_SENSITIVE,
+            requires_web_search=True,
+            requires_rag=False,
+            required_freshness="historical" if intent == SearchIntent.HISTORICAL_DATA_QUERY else "current",
+            search_topics=topics,
+            verification_targets=["date", "currency", "unit", "official_source"],
+            reason=f"Detected {intent.value} requiring real-time or historical web retrieval.",
+            search_intent=intent.value,
+            extracted_entities=entities,
+        )
 
     # 4. Temporal & Time-Sensitive Triggers (Category C)
     temporal_triggers = [
@@ -165,22 +192,58 @@ def classify_query(
             reason="Combines foundational concept explanation with latest developments."
         )
 
-    # 7. Latest Information (Category B)
+    # 7. Latest Information & Ambiguous Technical Acronyms / Confirmation-Bias Challenges (Category B)
     latest_indicators = [
         "latest", "recent", "newest", "what's new", "what changed",
         "version of", "current version", "release", "released in",
         "roadmap", "pricing", "updates"
     ]
-    if explicit_search or mentions_modern_tech or any(li in cleaned for li in latest_indicators):
+
+    # Detect technical acronym queries (e.g. "What is MCP?", "What does RAG stand for?", "MCP means X, right?")
+    acronym_matches = re.findall(r'\b([A-Z]{2,8})\b', query)
+    is_acronym_question = bool(acronym_matches) and any(
+        w in cleaned for w in ["what is", "what does", "stand for", "mean", "means", "acronym", "definition", "right?"]
+    )
+
+    # Detect user confirmation-bias challenges ("Are you sure?", "I think it means...", "isn't it...")
+    challenge_triggers = [
+        "are you sure", "i think it means", "doesn't it mean", "isn't it",
+        "not ", "right?", "wrong,", "actually it means"
+    ]
+    is_challenge = any(ct in cleaned for ct in challenge_triggers) and any(
+        w in cleaned for w in ["mean", "means", "stand for", "protocol", "framework", "sure"]
+    )
+
+    if explicit_search or mentions_modern_tech or is_acronym_question or is_challenge or any(li in cleaned for li in latest_indicators):
         clean_target = clean_query_text(query)
+        # Build authoritative search topic for acronym / challenge queries
+        if is_challenge and not acronym_matches and recent_history:
+            # Recover the acronym/topic from recent conversation history
+            history_text = " ".join(m.get("content", "") for m in recent_history[-4:])
+            hist_acronyms = re.findall(r'\b([A-Z]{2,8})\b', history_text)
+            if hist_acronyms:
+                acronym_matches = hist_acronyms
+
+        if "mcp" in cleaned or "MCP" in acronym_matches:
+            if "another industry" in cleaned or "other industry" in cleaned or "different" in cleaned:
+                clean_target = "MCP acronym meanings industries Model Context Protocol"
+            else:
+                clean_target = "Model Context Protocol MCP AI agents official documentation"
+        elif is_acronym_question and acronym_matches:
+            acr = acronym_matches[0]
+            clean_target = f"{acr} technical acronym official documentation"
+        elif is_challenge and acronym_matches:
+            acr = acronym_matches[0]
+            clean_target = f"{acr} official definition documentation"
+
         return QueryClassification(
             category=QueryCategory.LATEST_INFO,
             requires_web_search=True,
             requires_rag=False,
             required_freshness="recent",
             search_topics=[clean_target],
-            verification_targets=["version", "release_date", "features"],
-            reason="Query asks for recent or post-cutoff information requiring web research."
+            verification_targets=["official_docs", "definition", "version"],
+            reason="Query asks for recent, post-cutoff, or technical acronym/factual verification."
         )
 
     # 8. Foundational Programming / CS (Category A - General Knowledge)
